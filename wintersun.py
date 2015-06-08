@@ -3,22 +3,18 @@ import os.path as os_path
 import os
 import re
 from collections import namedtuple
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, PackageLoader
 
 MARKDOWN_FILTER = re.compile(r'([a-zA-Z0-9_-]+)\.md')
 TEMPLATED_FILENAME_FILTER = re.compile(r'[^a-z^A-Z^0-9-]')
+REMOVE_LEADING_SLASHES = re.compile(r'^(\.\/)+')
 
-TEMPLATE_DIR = 'templates'
+TEMPLATE_DIR = './wintersun/templates'
 TARGET_DIR = './site'
 
-EXCLUDED_DIRS = ['tags', TEMPLATE_DIR, 'media', 'static', 'tests', TARGET_DIR]
-# use imagemagick to process media into thumbnails
-# gulp for css + js
-# use threading/multiprocessing for recursion? any global state?
+EXCLUDED_DIRS = ['./tags', TEMPLATE_DIR, './media', './static', './tests', TARGET_DIR, './wintersun']
 
-
-# put into if name = main
-env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
+env = Environment(loader=PackageLoader('wintersun'))
 
 
 def get_items_from_path(path, fn=os_path.isfile):
@@ -30,8 +26,13 @@ def get_items_from_path(path, fn=os_path.isfile):
 
 def get_markdown_files(filenames):
     for filename in filenames:
-        if MARKDOWN_FILTER.match(filename):
+        if MARKDOWN_FILTER.search(filename):
             yield filename
+
+
+def standardize_filename(filename):
+    return TEMPLATED_FILENAME_FILTER.sub('-',
+            REMOVE_LEADING_SLASHES.sub('', filename))
 
 
 def build_tags(path):
@@ -41,25 +42,27 @@ def build_tags(path):
     pass
 
 
-def build_index(path, title):
-    directory_name = MARKDOWN_FILTER.match(title).groups()
+def build_index(path, filename):
+    directory_name = MARKDOWN_FILTER.search(filename).groups()
 
     if not directory_name:
         return []
 
-    directory_name = directory_name.groups()[0]
+    directory_name = directory_name[0]
     directory_path = os_path.join(path, directory_name)
 
     # process files using markdown to extract title + date, sort by date
-    return (file_name for file_name in os.listdir(directory_path)
-            if os_path.isfile(directory_path + file_name) and
+    return (standardize_filename(file_name) for file_name
+            in os.listdir(directory_path)
+            if os_path.isfile(os_path.join(directory_path, file_name)) and
             MARKDOWN_FILTER.match(file_name)), directory_path
 
 
-def templated_content(path, contents, meta):
-    template = env.get_template(meta.template.lower() + '.html')
-    if meta.template == 'Index':
-        meta['indexed'], meta['indexed_dir'] = build_index(path, meta['title'])
+def templated_content(filename, path, contents, meta):
+    template = env.get_template(meta['template'][0].lower() + '.html')
+    print 'template meta title: {}'.format(meta['title'][0])
+    if meta['template'][0] == 'Index':
+        meta['indexed'], meta['indexed_dir'] = build_index(path, filename)
 
     return template.render(
         path=path,
@@ -73,18 +76,21 @@ def build_tree(path):
 
     md = markdown.Markdown(extensions=['markdown.extensions.meta'])
 
-    # possible to use map/threads here
-    # map filenames into Queue?
     for md_file in md_files:
+        print 'md_file: {}'.format(md_file)
         with open(md_file, 'r') as f:
             marked_up = md.convert(f.read())
-            templated_item = templated_content(path, marked_up, md.Meta)
+            templated_item = templated_content(md_file, path, marked_up, md.Meta)
             md.reset()
+
+            print 'creating file: {}'.format(
+                standardize_filename(md_file.strip()) + '.html')
+
 
             output_file = os_path.join(
                 TARGET_DIR,
                 path,
-                TEMPLATED_FILENAME_FILTER.sub(md_file, '-') + '.html')
+                standardize_filename(md_file) + '.html')
 
             with open(output_file, 'wb') as out:
                 out.write(templated_item)
@@ -92,5 +98,9 @@ def build_tree(path):
     for directory in directories:
         if directory not in EXCLUDED_DIRS:
             print 'making dir: {}'.format(directory)
-            os.mkdir(TARGET_DIR + path + directory, 0755)
-            build_tree(path + directory)
+            os.mkdir(os_path.join(TARGET_DIR, path, directory), 0755)
+            build_tree(os_path.join(path, directory))
+
+
+if __name__ == '__main__':
+    build_tree('./')

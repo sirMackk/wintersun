@@ -1,0 +1,7 @@
+{{ meta.title }}
+{{ meta.indexed }}
+{% for indexed_item in meta.indexed %}
+<a href="{{ path }}/{{ indexed_item }}.html">{{ indexed_item }}</a>
+{% endfor %}
+
+{{ contents|safe }}
