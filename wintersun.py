@@ -1,18 +1,23 @@
 import markdown
 import os.path as os_path
+from sys import exit
 import os
+from shutil import rmtree, copytree
 import re
 from collections import namedtuple
 from jinja2 import Environment, FileSystemLoader, PackageLoader
 
+# what if these lived in a config namedtuple?
 MARKDOWN_FILTER = re.compile(r'([a-zA-Z0-9_-]+)\.md')
 TEMPLATED_FILENAME_FILTER = re.compile(r'[^a-z^A-Z^0-9-]')
-REMOVE_LEADING_SLASHES = re.compile(r'^(\.\/)+')
+REMOVE_LEADING_SLASHES = re.compile(r'^[a-zA-Z0-9\.\/]*\/')
+REMOVE_TRAILING_SUFFIX = re.compile(r'\.md$')
 
 TEMPLATE_DIR = './wintersun/templates'
+STATIC_DIR = './wintersun/static'
 TARGET_DIR = './site'
 
-EXCLUDED_DIRS = ['./tags', TEMPLATE_DIR, './media', './static', './tests', TARGET_DIR, './wintersun']
+EXCLUDED_DIRS = ['./tags', TEMPLATE_DIR, './media', STATIC_DIR, './tests', TARGET_DIR, './wintersun']
 
 env = Environment(loader=PackageLoader('wintersun'))
 
@@ -32,7 +37,8 @@ def get_markdown_files(filenames):
 
 def standardize_filename(filename):
     return TEMPLATED_FILENAME_FILTER.sub('-',
-            REMOVE_LEADING_SLASHES.sub('', filename))
+            REMOVE_TRAILING_SUFFIX.sub('',
+            REMOVE_LEADING_SLASHES.sub('', filename)))
 
 
 def build_tags(path):
@@ -60,8 +66,9 @@ def build_index(path, filename):
 
 def templated_content(filename, path, contents, meta):
     template = env.get_template(meta['template'][0].lower() + '.html')
+    # debugging
     print 'template meta title: {}'.format(meta['title'][0])
-    if meta['template'][0] == 'Index':
+    if meta['template'][0] in ('Index', 'Main',):
         meta['indexed'], meta['indexed_dir'] = build_index(path, filename)
 
     return template.render(
@@ -102,5 +109,24 @@ def build_tree(path):
             build_tree(os_path.join(path, directory))
 
 
+def prepare_target_dir():
+    def setup_target_dir():
+        os.mkdir(TARGET_DIR, 0755)
+        copytree(STATIC_DIR, os_path.join(TARGET_DIR, './static'))
+
+    if not os_path.exists(TARGET_DIR):
+        setup_target_dir()
+        return
+
+    if os_path.isdir(TARGET_DIR):
+        if raw_input("{} exists! Enter y to delete and continue: ".format(
+            TARGET_DIR)).lower() == 'y':
+            rmtree(TARGET_DIR)
+            setup_target_dir()
+        else:
+            exit()
+
+
 if __name__ == '__main__':
+    prepare_target_dir()
     build_tree('./')

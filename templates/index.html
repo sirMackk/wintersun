@@ -1,7 +1,15 @@
-{{ meta.title }}
-{{ meta.indexed }}
-{% for indexed_item in meta.indexed %}
-<a href="{{ path }}/{{ indexed_item }}.html">{{ indexed_item }}</a>
-{% endfor %}
+{% extends "base.html" %}
 
-{{ contents|safe }}
+{% block content %}
+  <ul class="link-list">
+    {% for indexed_item in meta.indexed %}
+    <li>
+      <a href="{{ meta.indexed_dir }}/{{ indexed_item }}.html">{{ indexed_item }}</a>
+    </li>
+    {% endfor %}
+  </ul>
+{% endblock content %}
+
+{% block aside %}
+Hi there
+{% endblock aside %}

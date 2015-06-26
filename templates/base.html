@@ -1,12 +1,31 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>matts code cave </title>
+    <title>{% block page_title %}{% endblock %}matts code cave </title>
     <link href="https://mattscodecave.com/feed" rel="alternate" title="ATOM" type="application/atom+xml" />
     <link href="https://mattscodecave.com/feed" rel="alternate" title="RSS" type="application/rss+xml" />
+    <link href="/static/styles.css" media="all" rel="stylesheet">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
   </head>
   <body>
-
+    <header>
+      <div class="logo">
+        <h2><a href="/">Matt's Codecave</a></h2>
+        <img src="/static/gears.svg">
+      </div>
+      <div class="top-nav">
+      </div>
+    </header>
+    <section>
+      {% block content %}
+      {% endblock content %}
+    </section>
+    <aside>
+      {% block aside %}
+      {% endblock aside %}
+    </aside>
+    <!-- javascript -->
     <script>hljs.initHighlighting();</script>
   </body>
 </html>

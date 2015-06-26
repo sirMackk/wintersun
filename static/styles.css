@@ -1,0 +1,56 @@
+header {
+  background-color: #3a3a3a;
+  padding: 12px 0 12px 65px;
+  border-bottom: 30px solid #eee;
+  border-top: 10px solid #fa6900;
+}
+
+header h2 {
+  display: inline-block;
+  margin: 0 35px 0 0;
+  vertical-align: 20px;
+}
+
+header h2 a {
+  font-size: 38px;
+  text-shadow: 2px 1px 1px black;
+  letter-spacing: 5px;
+  color: #fafafa;
+  text-decoration: none;
+}
+
+header h2 a:hover {
+  text-shadow: -2px 1px 1px black;
+}
+
+header h2 a:visited {
+  color: #fafafa;
+}
+
+body {
+  font-size: 18px;
+  line-height: 1.6;
+  color: #333;
+  text-shadow: 0px 1px 1px rgba(0, 0, 0, 0.1);
+  background-color: #fdfdfd;
+  margin: 0;
+  padding: 0;
+}
+
+section {
+  padding: 5px 0 65px 65px;
+  max-width: 650px;
+}
+
+a {
+  transition: all 0.35s ease-in-out;
+}
+
+a:visited {
+  color: #aaa;
+}
+
+a:hover {
+  color: #fa6900;
+}
+

@@ -1,0 +1,21 @@
+{% extends "index.html" %}
+
+{% block content %}
+  <div class="intro">
+    <p>
+      Hi there,
+    </p>
+  </div>
+  <h4>All posts</h4>
+  <ul class="link-list">
+    {% for indexed_item in meta.indexed %}
+    <li>
+      <a href="{{ meta.indexed_dir }}/{{ indexed_item }}.html">{{ indexed_item }}</a>
+    </li>
+    {% endfor %}
+  </ul>
+{% endblock content %}
+ 
+{% block aside %}
+Check out my photolog!
+{% endblock aside %}
