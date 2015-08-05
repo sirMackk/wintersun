@@ -33,36 +33,36 @@ class Feed(object):
         self.doc = doc
         self.feed = feed
 
-    def add_entry(self, entry):
+    def add_entry(self, entry_dict):
         # make into map + loop
         entry = self.doc.createElement('entry')
 
         title = self.doc.createElement('title')
-        title.appendChild(self.doc.createTextNode(entry['title']))
+        title.appendChild(self.doc.createTextNode(entry_dict['title']))
 
         link = self.doc.createElement('link')
         link.setAttribute('rel', 'alternate')
         link.setAttribute('type', 'text/html')
-        link.setAttribute('href', entry['link'])
+        link.setAttribute('href', entry_dict['link'])
 
         entry_id = self.doc.createElement('id')
-        entry_id.appendChild(self.doc.createTextNode(entry['link']))
+        entry_id.appendChild(self.doc.createTextNode(entry_dict['link']))
 
         published = self.doc.createElement('published')
-        published.appendChild(self.doc.createTextNode(entry['published']))
+        published.appendChild(self.doc.createTextNode(entry_dict['published']))
 
         updated = self.doc.createElement('updated')
-        updated.appendChild(self.doc.createTextNode(entry['updated']))
+        updated.appendChild(self.doc.createTextNode(entry_dict['updated']))
 
         name = self.doc.createElement('name')
-        name.appendChild(self.doc.createTextNode(entry['name']))
+        name.appendChild(self.doc.createTextNode(entry_dict['name']))
 
         author = self.doc.createElement('author')
         author.appendChild(name)
 
         content = self.doc.createElement('content')
         content.setAttribute('type', 'xhtml')
-        content.appendChild(self.doc.createTextNode(entry['content']))
+        content.appendChild(self.doc.createTextNode(entry_dict['content']))
 
         entry.appendChild(title)
         entry.appendChild(link)
