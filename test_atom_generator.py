@@ -3,6 +3,7 @@ import mock
 
 import atom_generator
 
+
 class TestFeed(unittest.TestCase):
     settings = [
         {'name': 'title',

@@ -7,17 +7,38 @@ import re
 from collections import namedtuple
 from jinja2 import Environment, FileSystemLoader, PackageLoader
 
+from atom_generator import Feed, create_timestamp
+
 # what if these lived in a config namedtuple?
 MARKDOWN_FILTER = re.compile(r'([a-zA-Z0-9_-]+)\.md')
 TEMPLATED_FILENAME_FILTER = re.compile(r'[^a-z^A-Z^0-9-]')
 REMOVE_LEADING_SLASHES = re.compile(r'^[a-zA-Z0-9\.\/]*\/')
+REMOVE_RELATIVE_SLASHES = re.compile(r'\./')
 REMOVE_TRAILING_SUFFIX = re.compile(r'\.md$')
+SITE_URL = 'http://mattscodecave.com'
 
 TEMPLATE_DIR = './wintersun/templates'
 STATIC_DIR = './wintersun/static'
 TARGET_DIR = './site'
 
-EXCLUDED_DIRS = ['./tags', TEMPLATE_DIR, './media', STATIC_DIR, './tests', TARGET_DIR, './wintersun']
+EXCLUDED_DIRS = ['./tags', TEMPLATE_DIR, './media', STATIC_DIR, './tests',
+                 TARGET_DIR, './wintersun']
+
+FEED = Feed([
+    {'name': 'title',
+     'value': 'mattscodecave.com'},
+    {'name': 'link',
+        'attributes': {
+            'rel': 'self',
+            'href': SITE_URL + '/'}},
+    {'name': 'link',
+        'attributes': {
+            'rel': 'alternate',
+            'href': SITE_URL}},
+    {'name': 'id',
+        'value': SITE_URL + '/'},
+    {'name': 'updated',
+        'value': create_timestamp()}])
 
 env = Environment(loader=PackageLoader('wintersun'))
 
@@ -36,8 +57,10 @@ def get_markdown_files(filenames):
 
 
 def standardize_filename(filename):
-    return TEMPLATED_FILENAME_FILTER.sub('-',
-            REMOVE_TRAILING_SUFFIX.sub('',
+    return TEMPLATED_FILENAME_FILTER.sub(
+        '-',
+        REMOVE_TRAILING_SUFFIX.sub(
+            '',
             REMOVE_LEADING_SLASHES.sub('', filename)))
 
 
@@ -77,6 +100,25 @@ def templated_content(filename, path, contents, meta):
         meta=meta)
 
 
+def generate_entry_link(md_file, path):
+    return '/'.join(
+        [SITE_URL,
+         REMOVE_RELATIVE_SLASHES.sub('', path),
+         standardize_filename(md_file) + '.html'])
+
+
+def generate_atom_entry(contents, md_file, path, meta):
+    entry = {
+        'title': meta['title'][0],
+        'link': generate_entry_link(md_file, path),
+        'published': create_timestamp(meta['date'][0]),
+        'updated': create_timestamp(meta['date'][0]),
+        'name': 'Matt',
+        'content': contents[:100] + '...'}
+
+    return entry
+
+
 def build_tree(path):
     directories = get_items_from_path(path, fn=os_path.isdir)
     md_files = get_markdown_files(get_items_from_path(path, fn=os_path.isfile))
@@ -87,12 +129,15 @@ def build_tree(path):
         print 'md_file: {}'.format(md_file)
         with open(md_file, 'r') as f:
             marked_up = md.convert(f.read())
-            templated_item = templated_content(md_file, path, marked_up, md.Meta)
+            templated_item = templated_content(md_file, path,
+                                               marked_up, md.Meta)
+            if u'Post' in md.Meta['template']:
+                FEED.add_entry(generate_atom_entry(
+                    marked_up, md_file, path, md.Meta))
             md.reset()
 
             print 'creating file: {}'.format(
                 standardize_filename(md_file.strip()) + '.html')
-
 
             output_file = os_path.join(
                 TARGET_DIR,
@@ -109,6 +154,7 @@ def build_tree(path):
             build_tree(os_path.join(path, directory))
 
 
+
 def prepare_target_dir():
     def setup_target_dir():
         os.mkdir(TARGET_DIR, 0755)
@@ -120,7 +166,7 @@ def prepare_target_dir():
 
     if os_path.isdir(TARGET_DIR):
         if raw_input("{} exists! Enter y to delete and continue: ".format(
-            TARGET_DIR)).lower() == 'y':
+                     TARGET_DIR)).lower() == 'y':
             rmtree(TARGET_DIR)
             setup_target_dir()
         else:
@@ -130,3 +176,6 @@ def prepare_target_dir():
 if __name__ == '__main__':
     prepare_target_dir()
     build_tree('./')
+
+    with open(os_path.join(TARGET_DIR, 'feed'), 'wb') as f:
+        f.write(FEED.generate_xml())

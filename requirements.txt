@@ -1,0 +1,8 @@
+Jinja2==2.7.3
+Markdown==2.6.2
+MarkupSafe==0.23
+argparse==1.2.1
+feedgen==0.3.1
+mock==1.0.1
+pytz==2015.4
+wsgiref==0.1.2

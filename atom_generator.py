@@ -1,8 +1,21 @@
 from xml.dom.minidom import Document
+import pytz
+from datetime import datetime
+
+
+def create_timestamp(date=None):
+    if date:
+        return date + 'T00:00:00+01:00'
+    else:
+        localtz = pytz.timezone("Europe/Berlin")
+        return datetime.now().replace(tzinfo=localtz).strftime(
+            "%Y-%m-%dT%H:%M:%S+01:00")
 
 
 class Feed(object):
+    # add entry should add item to list, then sort by something before generating xml
     def __init__(self, settings):
+        self.entry_data = []
         self.settings = settings
         self.create_feed()
 
@@ -19,8 +32,6 @@ class Feed(object):
 
             yield el
 
-
-
     def create_feed(self):
         doc = Document()
         feed = doc.createElement('feed')
@@ -33,7 +44,11 @@ class Feed(object):
         self.doc = doc
         self.feed = feed
 
-    def add_entry(self, entry_dict):
+    def add_entry(self, entry):
+        self.entry_data.append(entry)
+
+
+    def generate_entry(self, entry_dict):
         # make into map + loop
         entry = self.doc.createElement('entry')
 
@@ -61,7 +76,7 @@ class Feed(object):
         author.appendChild(name)
 
         content = self.doc.createElement('content')
-        content.setAttribute('type', 'xhtml')
+        content.setAttribute('type', 'html')
         content.appendChild(self.doc.createTextNode(entry_dict['content']))
 
         entry.appendChild(title)
@@ -74,5 +89,9 @@ class Feed(object):
 
         self.feed.appendChild(entry)
 
-    def generate_xml(self):
+    def generate_xml(self, mAx=10):
+        self.entry_data.sort(key=lambda entry: entry['published'], reverse=True)
+        for entry in self.entry_data[:mAx]:
+            self.generate_entry(entry)
+
         return self.doc.toprettyxml()
