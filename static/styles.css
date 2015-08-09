@@ -1,6 +1,6 @@
 header {
   background-color: #3a3a3a;
-  padding: 12px 0 12px 65px;
+  padding: 12px 0 12px 265px;
   border-bottom: 30px solid #eee;
   border-top: 10px solid #fa6900;
 }
@@ -38,7 +38,7 @@ body {
 }
 
 section {
-  padding: 5px 0 65px 65px;
+  padding: 5px 0 65px 265px;
   max-width: 650px;
 }
 
