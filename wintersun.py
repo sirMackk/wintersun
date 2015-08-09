@@ -90,7 +90,7 @@ def build_index(path, filename):
 def templated_content(filename, path, contents, meta):
     template = env.get_template(meta['template'][0].lower() + '.html')
     # debugging
-    print 'template meta title: {}'.format(meta['title'][0])
+    print u'template meta title: {}'.format(meta['title'][0])
     if meta['template'][0] in ('Index', 'Main',):
         meta['indexed'], meta['indexed_dir'] = build_index(path, filename)
 
@@ -109,12 +109,12 @@ def generate_entry_link(md_file, path):
 
 def generate_atom_entry(contents, md_file, path, meta):
     entry = {
-        'title': meta['title'][0],
-        'link': generate_entry_link(md_file, path),
-        'published': create_timestamp(meta['date'][0]),
-        'updated': create_timestamp(meta['date'][0]),
-        'name': 'Matt',
-        'content': contents[:100] + '...'}
+        u'title': meta['title'][0],
+        u'link': generate_entry_link(md_file, path),
+        u'published': create_timestamp(meta['date'][0]),
+        u'updated': create_timestamp(meta['date'][0]),
+        u'name': u'Matt',
+        u'content': contents[:100] + '...'}
 
     return entry
 
@@ -126,9 +126,9 @@ def build_tree(path):
     md = markdown.Markdown(extensions=['markdown.extensions.meta'])
 
     for md_file in md_files:
-        print 'md_file: {}'.format(md_file)
-        with open(md_file, 'r') as f:
-            marked_up = md.convert(f.read())
+        print u'md_file: {}'.format(md_file)
+        with open(md_file) as f:
+            marked_up = md.convert(unicode(f.read(), 'utf-8'))
             templated_item = templated_content(md_file, path,
                                                marked_up, md.Meta)
             if u'Post' in md.Meta['template']:
@@ -136,7 +136,7 @@ def build_tree(path):
                     marked_up, md_file, path, md.Meta))
             md.reset()
 
-            print 'creating file: {}'.format(
+            print u'creating file: {}'.format(
                 standardize_filename(md_file.strip()) + '.html')
 
             output_file = os_path.join(
@@ -144,12 +144,12 @@ def build_tree(path):
                 path,
                 standardize_filename(md_file) + '.html')
 
-            with open(output_file, 'wb') as out:
-                out.write(templated_item)
+            with open(output_file, mode='w') as out:
+                out.write(templated_item.encode('utf-8-sig'))
 
     for directory in directories:
         if directory not in EXCLUDED_DIRS:
-            print 'making dir: {}'.format(directory)
+            print u'making dir: {}'.format(directory)
             os.mkdir(os_path.join(TARGET_DIR, path, directory), 0755)
             build_tree(os_path.join(path, directory))
 
