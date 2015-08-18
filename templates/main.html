@@ -10,7 +10,7 @@
   <ul class="link-list">
     {% for indexed_item in meta.indexed %}
     <li>
-      <a href="{{ meta.indexed_dir }}/{{ indexed_item }}.html">{{ indexed_item|replace("-", " ")|title }}</a>
+      <a href="{{ meta.indexed_dir }}/{{ indexed_item.filename }}.html">{{ indexed_item.title }}</a>
     </li>
     {% endfor %}
   </ul>

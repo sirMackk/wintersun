@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <todo version="0.1.20">
-    <note priority="veryhigh" time="1439738732">
+    <note priority="veryhigh" time="1439738732" done="1439869917">
         fix main template to be chronological
     </note>
     <note priority="veryhigh" time="1439738752">

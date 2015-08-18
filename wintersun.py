@@ -71,6 +71,28 @@ def build_tags(path):
     pass
 
 
+def filenames_by_date(dir_path):
+    PostItem = namedtuple('PostItem', 'filename, title, date')
+    files = []
+    md_files = get_markdown_files(
+        get_items_from_path(dir_path, fn=os_path.isfile))
+    md = markdown.Markdown(extensions=['markdown.extensions.meta'])
+
+    for md_file in md_files:
+        with open(md_file, 'rb') as f:
+            md.convert(unicode(f.read(), 'utf-8'))
+            files.append(
+                PostItem._make((standardize_filename(md_file),
+                                md.Meta['title'][0],
+                                md.Meta['date'][0],)))
+            md.reset()
+
+    return sorted(
+        files,
+        key=lambda file_tuple: file_tuple.date,
+        reverse=True), dir_path
+
+
 def build_index(path, filename):
     directory_name = MARKDOWN_FILTER.search(filename).groups()
 
@@ -79,12 +101,7 @@ def build_index(path, filename):
 
     directory_name = directory_name[0]
     directory_path = os_path.join(path, directory_name)
-
-    # process files using markdown to extract title + date, sort by date
-    return (standardize_filename(file_name) for file_name
-            in os.listdir(directory_path)
-            if os_path.isfile(os_path.join(directory_path, file_name)) and
-            MARKDOWN_FILTER.match(file_name)), directory_path
+    return filenames_by_date(directory_path)
 
 
 def templated_content(filename, path, contents, meta):
@@ -119,6 +136,19 @@ def generate_atom_entry(contents, md_file, path, meta):
     return entry
 
 
+def write_templated_file(path, output_file, contents):
+    print u'creating file: {}'.format(
+        standardize_filename(output_file.strip()) + '.html')
+
+    output = os_path.join(
+        TARGET_DIR,
+        path,
+        standardize_filename(output_file) + '.html')
+
+    with open(output, mode='w') as out:
+        out.write(contents.encode('utf-8-sig'))
+
+
 def build_tree(path):
     directories = get_items_from_path(path, fn=os_path.isdir)
     md_files = get_markdown_files(get_items_from_path(path, fn=os_path.isfile))
@@ -136,23 +166,13 @@ def build_tree(path):
                     marked_up, md_file, path, md.Meta))
             md.reset()
 
-            print u'creating file: {}'.format(
-                standardize_filename(md_file.strip()) + '.html')
-
-            output_file = os_path.join(
-                TARGET_DIR,
-                path,
-                standardize_filename(md_file) + '.html')
-
-            with open(output_file, mode='w') as out:
-                out.write(templated_item.encode('utf-8-sig'))
+            write_templated_file(path, md_file, templated_item)
 
     for directory in directories:
         if directory not in EXCLUDED_DIRS:
             print u'making dir: {}'.format(directory)
             os.mkdir(os_path.join(TARGET_DIR, path, directory), 0755)
             build_tree(os_path.join(path, directory))
-
 
 
 def prepare_target_dir():
