@@ -5,7 +5,8 @@ import os
 from shutil import rmtree, copytree
 import re
 from collections import namedtuple
-from jinja2 import Environment, FileSystemLoader, PackageLoader
+from jinja2 import Environment, PackageLoader
+from datetime import datetime
 
 from atom_generator import Feed, create_timestamp
 
@@ -71,6 +72,10 @@ def build_tags(path):
     pass
 
 
+def convert_date(date_string):
+    return datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S")
+
+
 def filenames_by_date(dir_path):
     PostItem = namedtuple('PostItem', 'filename, title, date')
     files = []
@@ -84,7 +89,7 @@ def filenames_by_date(dir_path):
             files.append(
                 PostItem._make((standardize_filename(md_file),
                                 md.Meta['title'][0],
-                                md.Meta['date'][0],)))
+                                convert_date(md.Meta['date'][0]),)))
             md.reset()
 
     return sorted(

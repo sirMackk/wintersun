@@ -43,6 +43,7 @@ section {
 }
 
 a {
+  font-family: arial;
   transition: all 0.35s ease-in-out;
 }
 
@@ -54,3 +55,17 @@ a:hover {
   color: #fa6900;
 }
 
+.link-list {
+  padding: 0;
+  margin: 0;
+}
+
+.link-list li {
+  padding: 0 0 15px;
+  margin: 0;
+  list-style-type: none;
+}
+
+.year-header {
+  font-family: arial;
+}
