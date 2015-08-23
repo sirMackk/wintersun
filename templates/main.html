@@ -3,13 +3,12 @@
 {% block content %}
   <div class="intro">
     <p>
-      Hi there,
     </p>
   </div>
-  <h4>All posts</h4>
+  <h4>Archive</h4>
   <ul class="link-list">
     {% for group in meta.indexed|groupby('date.year')|sort(reverse=True) %}
-    <h5 class="year-header">{{ group.grouper }}</h5>
+    <h4 class="year-header">{{ group.grouper }}</h4>
         {% for indexed_item in group.list %}
         <li>
           <a href="{{ meta.indexed_dir }}/{{ indexed_item.filename }}.html">{{ indexed_item.title }}</a>
@@ -18,7 +17,3 @@
     {% endfor %}
   </ul>
 {% endblock content %}
- 
-{% block aside %}
-Check out my photolog!
-{% endblock aside %}

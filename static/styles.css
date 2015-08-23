@@ -5,6 +5,16 @@ header {
   border-top: 10px solid #fa6900;
 }
 
+header .logo {
+  max-width: 650px;
+}
+
+header .logo img {
+  display: block;
+  float: right;
+  margin-top: -7px;
+}
+
 header h2 {
   display: inline-block;
   margin: 0 35px 0 0;
@@ -12,6 +22,7 @@ header h2 {
 }
 
 header h2 a {
+  border: none;
   font-size: 38px;
   text-shadow: 2px 1px 1px black;
   letter-spacing: 5px;
@@ -37,22 +48,49 @@ body {
   padding: 0;
 }
 
+body pre {
+  display: inline-block;
+  font-size: 13px;
+}
+
 section {
   padding: 5px 0 65px 265px;
   max-width: 650px;
+  display: inline-block;
+  float: left;
+}
+
+aside {
+  padding-left: 50px;
+  max-width: 250px;
+  display: inline-block;
+  font-size: 14px;
+}
+
+aside .about {
+  margin-top: 22px;
+  padding: 5px 10px;
+  background-color: #EEE;
+}
+
+aside .about .controls a:visited {
+  color: #B88630;
 }
 
 a {
+  text-decoration: none;
+  border-bottom: 1px dashed #B88630;
   font-family: arial;
-  transition: all 0.35s ease-in-out;
+  transition: all 2.35s ease-in-out;
+  color: #B88630;
 }
 
 a:visited {
-  color: #aaa;
+  color: #8F7E30;
 }
 
 a:hover {
-  color: #fa6900;
+  border-bottom: 1px dashed #fa6900;
 }
 
 .link-list {
