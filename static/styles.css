@@ -21,6 +21,11 @@ header h2 {
   vertical-align: 20px;
 }
 
+h5.date {
+  font-size: 15px;
+  font-weight: normal;
+}
+
 header h2 a {
   border: none;
   font-size: 38px;
