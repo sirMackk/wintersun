@@ -1,16 +1,19 @@
-import markdown
+import argparse
 import os.path as os_path
 from sys import exit
 import os
 from shutil import rmtree, copytree
 import re
 from collections import namedtuple
+
+import markdown
 from jinja2 import Environment, PackageLoader
 from datetime import datetime
 
 from atom_generator import Feed, create_timestamp
 
-# what if these lived in a config namedtuple?
+# make these live in a global dictionary
+ARGS = None
 MARKDOWN_FILTER = re.compile(r'([a-zA-Z0-9_-]+)\.md')
 TEMPLATED_FILENAME_FILTER = re.compile(r'[^a-z^A-Z^0-9-]')
 REMOVE_LEADING_SLASHES = re.compile(r'^[a-zA-Z0-9\.\/]*\/')
@@ -190,15 +193,34 @@ def prepare_target_dir():
         return
 
     if os_path.isdir(TARGET_DIR):
-        if raw_input("{} exists! Enter y to delete and continue: ".format(
-                     TARGET_DIR)).lower() == 'y':
+        if ARGS.delete:
             rmtree(TARGET_DIR)
             setup_target_dir()
         else:
             exit()
 
 
+def set_settings(args):
+    global ARGS
+    global TARGET_DIR
+    if args.target:
+        TARGET_DIR = args.target
+    ARGS = args
+
+
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-d', '--delete',
+                        help=("Remove target output directory before "
+                              "generating. Default: {}").format(
+                                  TARGET_DIR),
+                        action='store_true')
+    parser.add_argument('-t', '--target',
+                        help=("Change target output directory."
+                              "Default: {}").format(TARGET_DIR))
+
+    set_settings(parser.parse_args())
+
     prepare_target_dir()
     build_tree('./')
 
