@@ -1,7 +1,10 @@
 import unittest
 import mock
+import logging
 
 import wintersun
+
+logging.disable(logging.INFO)
 
 
 class TestWintersun(unittest.TestCase):

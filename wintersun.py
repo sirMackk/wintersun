@@ -1,10 +1,11 @@
 import argparse
 import os.path as os_path
-from sys import exit
+from sys import exit, stdout
 import os
 from shutil import rmtree, copytree
 import re
 from collections import namedtuple
+import logging
 
 import markdown
 from jinja2 import Environment, PackageLoader
@@ -45,6 +46,9 @@ FEED = Feed([
         'value': create_timestamp()}])
 
 env = Environment(loader=PackageLoader('wintersun'))
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.StreamHandler(stdout))
+logger.setLevel(logging.INFO)
 
 
 class MarkdownTransformer(object):
@@ -79,7 +83,7 @@ def build_tree(path):
         filter_items_from_path(path, filter_fn=os_path.isfile))
 
     for md_file in md_files:
-        print u'md_file: {}'.format(md_file)
+        logger.info(u'md_file: %s', md_file)
         with MarkdownTransformer() as md:
             with open(md_file) as f:
                 marked_up = md.convert_utf8(f)
@@ -97,7 +101,7 @@ def transform_next_dir_level(path, directories):
     # abstraction level mix - too many topics?
     for directory in directories:
         if directory not in EXCLUDED_DIRS:
-            print u'making dir: {}'.format(directory)
+            logger.info(u'making dir: %s', directory)
             os.mkdir(os_path.join(TARGET_DIR, path, directory), 0755)
             build_tree(os_path.join(path, directory))
 
@@ -107,7 +111,7 @@ def apply_output_template(md_file, path, contents, meta):
     # replace meta with title
     # replace conditional with function
     # rename vars ie contents, or meta
-    print u'template meta title: {}'.format(meta['title'][0])
+    logger.info(u'template meta title: %s', meta['title'][0])
     template = env.get_template(meta['template'][0].lower() + '.html')
     if meta['template'][0] in ('Index', 'Main', ):
         meta['indexed'], meta['indexed_dir'] = generate_post_index(md_file,
@@ -120,8 +124,8 @@ def apply_output_template(md_file, path, contents, meta):
 
 
 def write_output_file(path, file_name, contents):
-    print u'creating file: {}'.format(
-        standardize_filename(file_name.strip()) + '.html')
+    logger.info(u'creating file: %s',
+                standardize_filename(file_name.strip()) + '.html')
 
     output_destination_path = os_path.join(
         TARGET_DIR,
