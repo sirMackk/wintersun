@@ -25,6 +25,7 @@ SITE_URL = 'http://mattscodecave.com'
 TEMPLATE_DIR = './wintersun/templates'
 STATIC_DIR = './wintersun/static'
 TARGET_DIR = './site'
+OUTPUT_ENCODING = 'utf-8-sig'
 
 EXCLUDED_DIRS = ['./tags', TEMPLATE_DIR, './media', STATIC_DIR, './tests',
                  TARGET_DIR, './wintersun']
@@ -70,31 +71,85 @@ class MarkdownTransformer(object):
 
     @property
     def Meta(self):
-        return self.md.Meta
+        return self._meta()
+
+    def _meta(self):
+        return {k: v[0] for k, v in self.md.Meta.iteritems()}
 
 
 def build_tree(path):
-    # pull out loop?
-    # responsiblities here: get files in current folder, get subfolders,
-    # generate markup, apply template, write template, update feed
-    # calling lots of othe functions on multiple levels :/
-    directories = filter_items_from_path(path, filter_fn=os_path.isdir)
-    md_files = get_markdown_files(
-        filter_items_from_path(path, filter_fn=os_path.isfile))
+    directories, input_files = get_files_and_directories_from(path)
 
-    for md_file in md_files:
-        logger.info(u'md_file: %s', md_file)
-        with MarkdownTransformer() as md:
-            with open(md_file) as f:
-                marked_up = md.convert_utf8(f)
-                templated_item = apply_output_template(md_file, path,
-                                                       marked_up, md.Meta)
-                if u'Post' in md.Meta['template']:
-                    update_feed(FEED, marked_up, md_file, path, md.Meta)
-
-                write_output_file(path, md_file, templated_item)
+    for md_file in input_files:
+        logger.info(u'input file: %s', md_file)
+        transform_into_output(md_file, path)
 
     transform_next_dir_level(path, directories)
+
+
+def get_files_and_directories_from(dir_path):
+    directories = filter_items_from_path(dir_path, filter_fn=os_path.isdir)
+    md_files = get_markdown_files(
+        filter_items_from_path(dir_path, filter_fn=os_path.isfile))
+    return directories, md_files
+
+
+def transform_into_output(md_file, path):
+    with MarkdownTransformer() as md:
+        md.Meta['filename'], md.Meta['path'] = md_file, path
+        transformed = apply_transformer(md)
+        contents = apply_template(transformed, md.Meta)
+
+        write_output_file(contents, md.Meta)
+
+
+def apply_template(contents, meta):
+    templated_item = render_template(contents, meta)
+    if is_template('post', meta):
+        update_feed(FEED, contents, meta)
+
+    return templated_item
+
+
+def apply_transformer(transformer):
+    meta = transformer.Meta
+    with open(meta['filename']) as f:
+        return transformer.convert_utf8(f)
+
+
+def is_template(template_type, meta):
+    return meta['template'] == unicode(template_type).capitalize()
+
+
+def render_template(contents, meta):
+    logger.info(u'template meta title: %s', meta['title'])
+    template = get_template(meta['title'])
+    if is_template('index', meta) or is_template('main', meta):
+        meta['indexed'], meta['indexed_dir'] = generate_post_index(meta)
+
+    return template.render(
+        contents=contents,
+        meta=meta)
+
+
+def get_template(title):
+    return env.get_template(title.lower() + 'html')
+
+
+def write_output_file(contents, meta):
+    path = meta['path']
+    out_filename = standardize_filename(meta['filename'].strip()) + '.html'
+
+    logger.info(u'creating file: %s',
+                out_filename)
+
+    output_destination_path = os_path.join(
+        TARGET_DIR,
+        path,
+        out_filename)
+
+    with open(output_destination_path, mode='w') as out:
+        out.write(contents.encode(OUTPUT_ENCODING))
 
 
 def transform_next_dir_level(path, directories):
@@ -106,45 +161,13 @@ def transform_next_dir_level(path, directories):
             build_tree(os_path.join(path, directory))
 
 
-def apply_output_template(md_file, path, contents, meta):
-    # replace meta with template name - get template via function
-    # replace meta with title
-    # replace conditional with function
-    # rename vars ie contents, or meta
-    logger.info(u'template meta title: %s', meta['title'][0])
-    template = env.get_template(meta['template'][0].lower() + '.html')
-    if meta['template'][0] in ('Index', 'Main', ):
-        meta['indexed'], meta['indexed_dir'] = generate_post_index(md_file,
-                                                                   path)
-
-    return template.render(
-        path=path,
-        contents=contents,
-        meta=meta)
-
-
-def write_output_file(path, file_name, contents):
-    logger.info(u'creating file: %s',
-                standardize_filename(file_name.strip()) + '.html')
-
-    output_destination_path = os_path.join(
-        TARGET_DIR,
-        path,
-        standardize_filename(file_name) + '.html')
-
-    with open(output_destination_path, mode='w') as out:
-        # encoding is a separate responsiblity
-        # this fn should just write to the right spot
-        out.write(contents.encode('utf-8-sig'))
-
-
-def generate_post_index(post_file, path):
-    index_directory_name = MARKDOWN_FILTER.search(post_file).groups()
+def generate_post_index(meta):
+    index_directory_name = MARKDOWN_FILTER.search(meta['filename']).groups()
 
     if not index_directory_name:
         return []
 
-    index_directory_path = os_path.join(path, index_directory_name[0])
+    index_directory_path = os_path.join(meta['path'], index_directory_name[0])
     return filenames_by_date(index_directory_path), index_directory_path
 
 
@@ -154,14 +177,13 @@ PostItem = namedtuple('PostItem', 'filename, title, date')
 def create_postitem(file_name, file_meta):
     return PostItem._make((
         standardize_filename(file_name),
-        file_meta['title'][0],
-        convert_date_time(file_meta['date'][0]),))
+        file_meta['title'],
+        convert_date_time(file_meta['date']),))
 
 
 def filenames_by_date(dir_path):
     files = []
-    input_files = get_markdown_files(
-        filter_items_from_path(dir_path, filter_fn=os_path.isfile))
+    _, input_files = get_files_and_directories_from(dir_path)
 
     with MarkdownTransformer() as md:
         for input_file in input_files:
@@ -183,20 +205,20 @@ def generate_entry_link(md_file, path):
          standardize_filename(md_file) + '.html'])
 
 
-def generate_atom_entry_dict(contents, md_file, path, meta):
+def generate_atom_entry_dict(contents, meta):
     entry = {
-        u'title': meta['title'][0],
-        u'link': generate_entry_link(md_file, path),
-        u'published': create_timestamp(meta['date'][0]),
-        u'updated': create_timestamp(meta['date'][0]),
+        u'title': meta['title'],
+        u'link': generate_entry_link(meta['filename'], meta['path']),
+        u'published': create_timestamp(meta['date']),
+        u'updated': create_timestamp(meta['date']),
         u'name': u'Matt',
         u'content': contents[:100] + '...'}
 
     return entry
 
 
-def update_feed(feed, marked_up, md_file, path, md_meta):
-    feed.add_entry(generate_atom_entry_dict(marked_up, md_file, path, md_meta))
+def update_feed(feed, marked_up, md_meta):
+    feed.add_entry(generate_atom_entry_dict(marked_up, md_meta))
 
 
 def build_path(node, path):

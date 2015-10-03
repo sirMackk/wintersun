@@ -67,7 +67,9 @@ class TestWintersun(unittest.TestCase):
     def test_generate_post_index(self, mock_filenames_by_date):
         mock_filenames_by_date.return_value = ('file1', 'file2',)
         dir_path = './wintersun/posts'
-        files, path = wintersun.generate_post_index('posts.md', dir_path)
+        meta = {'filename': 'posts.md', 'path': dir_path}
+
+        files, path = wintersun.generate_post_index(meta)
         self.assertEqual(dir_path + '/posts', path)
         self.assertIn('file1', files)
         self.assertIn('file2', files)
@@ -82,10 +84,10 @@ class TestWintersun(unittest.TestCase):
 
         mock_transformer.return_value.__enter__.return_value = mock_transformer
         type(mock_transformer).Meta = mock.PropertyMock(side_effect=[
-            {'title': ['title1'],
-                'date': ['2015-09-22 20:00:00']},
-            {'title': ['title2'],
-                'date': ['2015-08-22 20:00:00']}
+            {'title': 'title1',
+                'date': '2015-09-22 20:00:00'},
+            {'title': 'title2',
+                'date': '2015-08-22 20:00:00'}
         ])
 
         sorted_filenames = wintersun.filenames_by_date('./posts')
@@ -100,29 +102,29 @@ class TestWintersun(unittest.TestCase):
                          wintersun.SITE_URL + '/wintersun/posts/file1.html')
 
     def test_generate_atom_entry_dict(self):
-        meta = {'title': ['title1'],
-                'date': ['2015-09-22']}
+        meta = {'title': 'title1',
+                'date': '2015-09-22',
+                'filename': 'file1',
+                'path': './wintersun/posts'}
         contents = 'Lorem ipsum ' * 25
-        file_name = 'file1'
-        path = './wintersun/posts'
         expected_result = {
-            u'title': meta['title'][0],
+            u'title': meta['title'],
             u'link': wintersun.SITE_URL + '/wintersun/posts/file1.html',
             u'published': '2015-09-22T00:00:00+01:00',
             u'updated': '2015-09-22T00:00:00+01:00',
             u'name': u'Matt',
             u'content': contents[:100] + '...'}
 
-        entry = wintersun.generate_atom_entry_dict(contents, file_name, path,
-                                                   meta)
+        entry = wintersun.generate_atom_entry_dict(contents, meta)
 
         self.assertEqual(entry, expected_result)
 
     @mock.patch('wintersun.generate_atom_entry_dict')
     def test_update_feed(self, mock_entry_dict):
         feed = mock.Mock()
+        meta = {'filename': 'file1', 'path': 'wintersun/'}
 
-        wintersun.update_feed(feed, '', 'file1', 'wintersun/', {})
+        wintersun.update_feed(feed, '', meta)
         self.assertTrue(mock_entry_dict.called)
         self.assertTrue(feed.add_entry.called)
 
@@ -134,38 +136,35 @@ class TestWintersun(unittest.TestCase):
     @mock.patch('__builtin__.open')
     def test_write_output_file(self, mock_open):
         target_dir = wintersun.TARGET_DIR = 'target'
-        path = 'wintersun/posts'
-        filename = 'file1'
+        meta = {'path': 'wintersun/posts', 'filename': 'file1'}
 
-        wintersun.write_output_file(path, filename, '')
-        mock_open.assert_called_with(target_dir + '/' + path + '/' +
+        wintersun.write_output_file('', meta)
+        mock_open.assert_called_with(target_dir + '/' + meta['path'] + '/' +
                                      'file1.html', mode='w')
         self.assertTrue(mock_open().__enter__().write.called)
 
     @mock.patch('wintersun.env')
-    def test_apply_output_template_post(self, mock_env):
+    def test_render_template_post(self, mock_env):
         mock_template = mock.Mock()
         mock_env.get_template.return_value = mock_template
 
-        file_name = 'file1.md'
-        path = 'wintersun/posts'
-        meta = {'title': ['title'], 'template': ['Post']}
+        meta = {'title': 'title', 'template': 'Post',
+                'filename': 'file1.md', 'path': 'wintersun/posts'}
         contents = 'Lorem ipsum ' * 100
 
-        wintersun.apply_output_template(file_name, path, contents, meta)
+        wintersun.render_template(contents, meta)
         self.assertTrue(mock_env.get_template.called)
         self.assertTrue(mock_template.render.called)
 
     @mock.patch('wintersun.env')
     @mock.patch('wintersun.generate_post_index')
-    def test_apply_output_template_index(self, mock_gen_post_index, mock_env):
+    def test_render_template_index(self, mock_gen_post_index, mock_env):
         mock_gen_post_index.return_value = (1, 2,)
-        file_name = 'file1.md'
-        path = 'wintersun/posts'
-        meta = {'title': ['title'], 'template': ['Index']}
+        meta = {'title': 'title', 'template': u'Index',
+                'filename': 'file1.md', 'path': 'wintersun/posts'}
         contents = 'Lorem ipsum ' * 100
 
-        wintersun.apply_output_template(file_name, path, contents, meta)
+        wintersun.render_template(contents, meta)
         self.assertTrue(mock_gen_post_index.called)
 
     @mock.patch('wintersun.build_tree')
@@ -201,10 +200,10 @@ class TestWintersun(unittest.TestCase):
     @mock.patch('wintersun.transform_next_dir_level')
     @mock.patch('wintersun.filter_items_from_path')
     @mock.patch('wintersun.MarkdownTransformer')
-    @mock.patch('wintersun.apply_output_template')
+    @mock.patch('wintersun.render_template')
     @mock.patch('wintersun.write_output_file')
     def test_build_tree(self, mock_write_output_file,
-                        mock_apply_output_template, mock_md_tranformer,
+                        mock_render_template, mock_md_tranformer,
                         mock_filter_items_from_path,
                         mock_transform_next_dir_level, mock_open):
         mock_filter_items_from_path.side_effect = [[], ['file1.md', 'file2.md']
@@ -212,7 +211,7 @@ class TestWintersun(unittest.TestCase):
 
         wintersun.build_tree('wintersun/posts')
 
-        self.assertEqual(mock_apply_output_template.call_count, 2)
+        self.assertEqual(mock_render_template.call_count, 2)
         self.assertEqual(mock_write_output_file.call_count, 2)
         self.assertTrue(mock_transform_next_dir_level.called)
 
@@ -248,6 +247,19 @@ class TestWintersun(unittest.TestCase):
         self.assertTrue(mock_mkdir.called)
         self.assertTrue(mock_copytree.called)
 
+    @mock.patch('wintersun.filter_items_from_path')
+    def test_get_files_and_directories_from(self, mock_filter_items):
+        mock_filter_items.side_effect = [
+            ['dir1', 'dir2'],
+            ['file1.md', 'file2.md']
+        ]
+
+        d, f = wintersun.get_files_and_directories_from('wintersun/posts')
+
+        self.assertEqual(mock_filter_items.call_count, 2)
+        self.assertEqual(d, ['dir1', 'dir2'])
+        self.assertEqual(list(f), ['file1.md', 'file2.md'])
+
 
 class TestMarkdownTransformer(unittest.TestCase):
 
@@ -272,7 +284,16 @@ class TestMarkdownTransformer(unittest.TestCase):
         self.assertTrue(mock_md.called)
         self.assertTrue(mock_md().reset.called)
 
+    @mock.patch('wintersun.markdown.Markdown')
+    def test__meta(self, mock_md):
+        md = wintersun.MarkdownTransformer()
 
+        type(md.md).Meta = mock.PropertyMock(
+            return_value={'prop1': [1],
+                          'prop2': ['two']})
+
+        self.assertEqual(md.Meta['prop1'], 1)
+        self.assertEqual(md.Meta['prop2'], 'two')
 
 
 if __name__ == '__main__':
