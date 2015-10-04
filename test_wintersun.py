@@ -153,7 +153,7 @@ class TestWintersun(unittest.TestCase):
         contents = 'Lorem ipsum ' * 100
 
         wintersun.render_template(contents, meta)
-        self.assertTrue(mock_env.get_template.called)
+        mock_env.get_template.assert_called_with('post.html')
         self.assertTrue(mock_template.render.called)
 
     @mock.patch('wintersun.env')
@@ -259,41 +259,6 @@ class TestWintersun(unittest.TestCase):
         self.assertEqual(mock_filter_items.call_count, 2)
         self.assertEqual(d, ['dir1', 'dir2'])
         self.assertEqual(list(f), ['file1.md', 'file2.md'])
-
-
-class TestMarkdownTransformer(unittest.TestCase):
-
-    @mock.patch('wintersun.markdown.Markdown')
-    def test_convert_utf8(self, mock_md):
-        flike = mock.Mock()
-        flike.read.return_value = 'test\n'
-        md_instance_mock = mock.Mock()
-        mock_md.return_value = md_instance_mock
-        md = wintersun.MarkdownTransformer()
-
-        md.convert_utf8(flike)
-
-        self.assertTrue(flike.read.called)
-        self.assertTrue(md_instance_mock.convert.called)
-
-    @mock.patch('wintersun.markdown.Markdown')
-    def test_md_transformer_reset(self, mock_md):
-        with wintersun.MarkdownTransformer() as md:
-            md.Meta
-
-        self.assertTrue(mock_md.called)
-        self.assertTrue(mock_md().reset.called)
-
-    @mock.patch('wintersun.markdown.Markdown')
-    def test__meta(self, mock_md):
-        md = wintersun.MarkdownTransformer()
-
-        type(md.md).Meta = mock.PropertyMock(
-            return_value={'prop1': [1],
-                          'prop2': ['two']})
-
-        self.assertEqual(md.Meta['prop1'], 1)
-        self.assertEqual(md.Meta['prop2'], 'two')
 
 
 if __name__ == '__main__':

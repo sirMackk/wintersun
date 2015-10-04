@@ -7,10 +7,10 @@ import re
 from collections import namedtuple
 import logging
 
-import markdown
 from jinja2 import Environment, PackageLoader
 from datetime import datetime
 
+from transformers import MarkdownTransformer
 from atom_generator import Feed, create_timestamp
 
 ARGS = None
@@ -29,6 +29,8 @@ OUTPUT_ENCODING = 'utf-8-sig'
 
 EXCLUDED_DIRS = ['./tags', TEMPLATE_DIR, './media', STATIC_DIR, './tests',
                  TARGET_DIR, './wintersun']
+
+PostItem = namedtuple('PostItem', 'filename, title, date')
 
 FEED = Feed([
     {'name': 'title',
@@ -52,31 +54,6 @@ logger.addHandler(logging.StreamHandler(stdout))
 logger.setLevel(logging.INFO)
 
 
-class MarkdownTransformer(object):
-    def __init__(self):
-        self.md = markdown.Markdown(extensions=['markdown.extensions.meta'])
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, exc_traceback):
-        self.md.reset()
-        return False
-
-    def convert(self, *args, **kwargs):
-        return self.md.convert(*args, **kwargs)
-
-    def convert_utf8(self, f):
-        return self.convert(unicode(f.read(), 'utf-8'))
-
-    @property
-    def Meta(self):
-        return self._meta()
-
-    def _meta(self):
-        return {k: v[0] for k, v in self.md.Meta.iteritems()}
-
-
 def build_tree(path):
     directories, input_files = get_files_and_directories_from(path)
 
@@ -96,8 +73,8 @@ def get_files_and_directories_from(dir_path):
 
 def transform_into_output(md_file, path):
     with MarkdownTransformer() as md:
+        transformed = apply_transformer(md, md_file)
         md.Meta['filename'], md.Meta['path'] = md_file, path
-        transformed = apply_transformer(md)
         contents = apply_template(transformed, md.Meta)
 
         write_output_file(contents, md.Meta)
@@ -111,9 +88,8 @@ def apply_template(contents, meta):
     return templated_item
 
 
-def apply_transformer(transformer):
-    meta = transformer.Meta
-    with open(meta['filename']) as f:
+def apply_transformer(transformer, filename):
+    with open(filename) as f:
         return transformer.convert_utf8(f)
 
 
@@ -123,7 +99,7 @@ def is_template(template_type, meta):
 
 def render_template(contents, meta):
     logger.info(u'template meta title: %s', meta['title'])
-    template = get_template(meta['title'])
+    template = get_template(meta['template'])
     if is_template('index', meta) or is_template('main', meta):
         meta['indexed'], meta['indexed_dir'] = generate_post_index(meta)
 
@@ -133,7 +109,7 @@ def render_template(contents, meta):
 
 
 def get_template(title):
-    return env.get_template(title.lower() + 'html')
+    return env.get_template(title.lower() + '.html')
 
 
 def write_output_file(contents, meta):
@@ -153,7 +129,6 @@ def write_output_file(contents, meta):
 
 
 def transform_next_dir_level(path, directories):
-    # abstraction level mix - too many topics?
     for directory in directories:
         if directory not in EXCLUDED_DIRS:
             logger.info(u'making dir: %s', directory)
@@ -169,16 +144,6 @@ def generate_post_index(meta):
 
     index_directory_path = os_path.join(meta['path'], index_directory_name[0])
     return filenames_by_date(index_directory_path), index_directory_path
-
-
-PostItem = namedtuple('PostItem', 'filename, title, date')
-
-
-def create_postitem(file_name, file_meta):
-    return PostItem._make((
-        standardize_filename(file_name),
-        file_meta['title'],
-        convert_date_time(file_meta['date']),))
 
 
 def filenames_by_date(dir_path):
@@ -198,11 +163,19 @@ def filenames_by_date(dir_path):
         reverse=True)
 
 
-def generate_entry_link(md_file, path):
-    return '/'.join(
-        [SITE_URL,
-         RELATIVE_SLASHES.sub('', path),
-         standardize_filename(md_file) + '.html'])
+def create_postitem(file_name, file_meta):
+    return PostItem._make((
+        standardize_filename(file_name),
+        file_meta['title'],
+        convert_date_time(file_meta['date']),))
+
+
+def convert_date_time(date_string):
+    return datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S")
+
+
+def update_feed(feed, marked_up, md_meta):
+    feed.add_entry(generate_atom_entry_dict(marked_up, md_meta))
 
 
 def generate_atom_entry_dict(contents, meta):
@@ -217,12 +190,11 @@ def generate_atom_entry_dict(contents, meta):
     return entry
 
 
-def update_feed(feed, marked_up, md_meta):
-    feed.add_entry(generate_atom_entry_dict(marked_up, md_meta))
-
-
-def build_path(node, path):
-    return os_path.join(path, node)
+def generate_entry_link(md_file, path):
+    return '/'.join(
+        [SITE_URL,
+         RELATIVE_SLASHES.sub('', path),
+         standardize_filename(md_file) + '.html'])
 
 
 def filter_items_from_path(path, filter_fn=os_path.isfile):
@@ -230,6 +202,10 @@ def filter_items_from_path(path, filter_fn=os_path.isfile):
         full_item_path = build_path(item, path)
         if filter_fn(full_item_path):
             yield full_item_path
+
+
+def build_path(node, path):
+    return os_path.join(path, node)
 
 
 def get_markdown_files(filenames):
@@ -253,12 +229,7 @@ def build_tags(path):
     pass
 
 
-def convert_date_time(date_string):
-    return datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S")
-
-
 def prepare_target_dir():
-    # extract contents of if
     def setup_target_dir():
         os.mkdir(TARGET_DIR, 0755)
         copytree(STATIC_DIR, os_path.join(TARGET_DIR, './static'))
@@ -276,6 +247,7 @@ def prepare_target_dir():
 
 
 def set_settings(args):
+    # this is a wart
     global ARGS
     global TARGET_DIR
     if args.target:
@@ -284,9 +256,6 @@ def set_settings(args):
 
 
 if __name__ == '__main__':
-    # add logger here
-    # align functions top to bottom
-    # analyze in term of abstraction level mixing
     # pull out into other modules
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--delete',
