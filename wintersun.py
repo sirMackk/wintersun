@@ -10,7 +10,7 @@ import logging
 from jinja2 import Environment, PackageLoader
 from datetime import datetime
 
-from transformers import MarkdownTransformer
+from transformers import MarkdownTransformer, CachingTransformer
 from atom_generator import Feed, create_timestamp
 
 ARGS = None
@@ -18,7 +18,7 @@ ARGS = None
 MARKDOWN_FILTER = re.compile(r'([a-zA-Z0-9_-]+)\.md')
 TEMPLATED_FILENAME_FILTER = re.compile(r'[^a-z^A-Z^0-9-]')
 LEADING_SLASHES = re.compile(r'^[a-zA-Z0-9\.\/]*\/')
-RELATIVE_SLASHES = re.compile(r'\./')
+RELATIVE_SLASHES = re.compile(r'\./(?![a-zA-Z])')
 TRAILING_SUFFIX = re.compile(r'\.md$')
 
 SITE_URL = 'http://mattscodecave.com'
@@ -31,6 +31,7 @@ EXCLUDED_DIRS = ['./tags', TEMPLATE_DIR, './media', STATIC_DIR, './tests',
                  TARGET_DIR, './wintersun']
 
 PostItem = namedtuple('PostItem', 'filename, title, date')
+TRANSFORMER = CachingTransformer(MarkdownTransformer)
 
 FEED = Feed([
     {'name': 'title',
@@ -72,12 +73,8 @@ def get_files_and_directories_from(dir_path):
 
 
 def transform_into_output(md_file, path):
-    with MarkdownTransformer() as md:
-        transformed = apply_transformer(md, md_file)
-        md.Meta['filename'], md.Meta['path'] = md_file, path
-        contents = apply_template(transformed, md.Meta)
-
-        write_output_file(contents, md.Meta)
+    content, meta = TRANSFORMER.get_or_create(path, md_file)
+    write_output_file(apply_template(content, meta), meta)
 
 
 def apply_template(contents, meta):
@@ -150,12 +147,9 @@ def filenames_by_date(dir_path):
     files = []
     _, input_files = get_files_and_directories_from(dir_path)
 
-    with MarkdownTransformer() as md:
-        for input_file in input_files:
-            with open(input_file, 'rb') as f:
-                md.convert_utf8(f)
-                input_file_meta = md.Meta
-                files.append(create_postitem(input_file, input_file_meta))
+    for input_file in input_files:
+        _, meta = TRANSFORMER.get_or_create(dir_path, input_file)
+        files.append(create_postitem(input_file, meta))
 
     return sorted(
         files,
@@ -193,7 +187,7 @@ def generate_atom_entry_dict(contents, meta):
 def generate_entry_link(md_file, path):
     return '/'.join(
         [SITE_URL,
-         RELATIVE_SLASHES.sub('', path),
+         path.replace('./', ''),
          standardize_filename(md_file) + '.html'])
 
 
@@ -201,7 +195,7 @@ def filter_items_from_path(path, filter_fn=os_path.isfile):
     for item in os.listdir(path):
         full_item_path = build_path(item, path)
         if filter_fn(full_item_path):
-            yield full_item_path
+            yield RELATIVE_SLASHES.sub('', full_item_path)
 
 
 def build_path(node, path):
@@ -246,17 +240,11 @@ def prepare_target_dir():
             exit()
 
 
-def set_settings(args):
-    # this is a wart
-    global ARGS
-    global TARGET_DIR
-    if args.target:
-        TARGET_DIR = args.target
-    ARGS = args
-
-
 if __name__ == '__main__':
-    # pull out into other modules
+    # pull stuff out into other modules?
+    # Add a PostItem cache - any time a file is to be read, check the cache first. Include contents in postitem. Delegate opening of files to cache.
+    # add tags using tdd
+    # add setup py
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--delete',
                         help=("Remove target output directory before "
@@ -267,7 +255,9 @@ if __name__ == '__main__':
                         help=("Change target output directory."
                               "Default: {}").format(TARGET_DIR))
 
-    set_settings(parser.parse_args())
+    ARGS = parser.parse_args()
+    if ARGS.target:
+        TARGET_DIR = ARGS.target
 
     prepare_target_dir()
     build_tree('./')

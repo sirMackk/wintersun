@@ -208,7 +208,6 @@ class TestWintersun(unittest.TestCase):
                         mock_transform_next_dir_level, mock_open):
         mock_filter_items_from_path.side_effect = [[], ['file1.md', 'file2.md']
                                                    ]
-
         wintersun.build_tree('wintersun/posts')
 
         self.assertEqual(mock_render_template.call_count, 2)
