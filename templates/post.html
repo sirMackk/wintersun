@@ -5,6 +5,11 @@
 
 <h2>{{ meta.title }}</h2>
 <h5 class="date">Published:  {{ meta.date.split(" ").0 }}</h5>
+<h5 class="tags">Tagged: 
+  {% for tag in meta.tags.split() %}
+    <a href="/tags/{{ tag }}.html">{{ tag }}</a>
+  {% endfor %}
+</h5>
 
 {{ contents|safe }}
 

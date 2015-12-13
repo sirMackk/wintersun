@@ -4,7 +4,7 @@ from sys import exit, stdout
 import os
 from shutil import rmtree, copytree
 import re
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 import logging
 
 from jinja2 import Environment, PackageLoader
@@ -25,12 +25,13 @@ SITE_URL = 'http://mattscodecave.com'
 TEMPLATE_DIR = './wintersun/templates'
 STATIC_DIR = './wintersun/static'
 TARGET_DIR = './site'
+TAG_DIR = 'tags'
 OUTPUT_ENCODING = 'utf-8-sig'
 
-EXCLUDED_DIRS = ['./tags', TEMPLATE_DIR, './media', STATIC_DIR, './tests',
+EXCLUDED_DIRS = [TEMPLATE_DIR, './media', STATIC_DIR, './tests',
                  TARGET_DIR, './wintersun']
 
-PostItem = namedtuple('PostItem', 'filename, title, date')
+PostItem = namedtuple('PostItem', 'filename, title, date, tags')
 TRANSFORMER = CachingTransformer(MarkdownTransformer)
 
 FEED = Feed([
@@ -79,8 +80,6 @@ def transform_into_output(md_file, path):
 
 def apply_template(contents, meta):
     templated_item = render_template(contents, meta)
-    if is_template('post', meta):
-        update_feed(FEED, contents, meta)
 
     return templated_item
 
@@ -161,15 +160,12 @@ def create_postitem(file_name, file_meta):
     return PostItem._make((
         standardize_filename(file_name),
         file_meta['title'],
-        convert_date_time(file_meta['date']),))
+        convert_date_time(file_meta['date']),
+        file_meta['tags'],))
 
 
 def convert_date_time(date_string):
     return datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S")
-
-
-def update_feed(feed, marked_up, md_meta):
-    feed.add_entry(generate_atom_entry_dict(marked_up, md_meta))
 
 
 def generate_atom_entry_dict(contents, meta):
@@ -216,16 +212,39 @@ def standardize_filename(filename):
             LEADING_SLASHES.sub('', filename)))
 
 
-def build_tags(path):
-    # process files looking at Meta for tags
-    # create list of namedtuples with title: tag
-    # use this to create index of titles for each tag
-    pass
+def generate_tag_index(tag, items):
+    template = get_template('tag')
+    rendered = template.render(
+        tag=tag,
+        tagged_items=items
+    )
+
+    dest = os_path.join(TARGET_DIR, TAG_DIR, tag + '.html')
+    logger.info('Writing %s tag to %s', tag, dest)
+    with open(dest, 'w') as f:
+        f.write(rendered.encode('utf-8-sig'))
+
+
+def build_tags(items):
+    tags = defaultdict(list)
+    for _, meta in items:
+        for tag in meta[u'tags'].split():
+            tags[tag].append({
+                'title': meta[u'title'],
+                'link':  generate_entry_link(meta[u'filename'], meta[u'path']),
+                'date': meta[u'date']
+            })
+
+    for tag, items in tags.iteritems():
+        generate_tag_index(
+            tag,
+            sorted(items, key=lambda item: item[u'date'], reverse=True))
 
 
 def prepare_target_dir():
     def setup_target_dir():
         os.mkdir(TARGET_DIR, 0755)
+        os.mkdir(os_path.join(TARGET_DIR, TAG_DIR), 0755)
         copytree(STATIC_DIR, os_path.join(TARGET_DIR, './static'))
 
     if not os_path.exists(TARGET_DIR):
@@ -240,10 +259,15 @@ def prepare_target_dir():
             exit()
 
 
+def create_rss_feed(feed, items):
+    with open(os_path.join(TARGET_DIR, 'feed'), 'wb') as f:
+        for content, meta in items:
+            if is_template('post', meta):
+                feed.add_entry(generate_atom_entry_dict(content, meta))
+        f.write(feed.generate_xml())
+
+
 if __name__ == '__main__':
-    # pull stuff out into other modules?
-    # Add a PostItem cache - any time a file is to be read, check the cache first. Include contents in postitem. Delegate opening of files to cache.
-    # add tags using tdd
     # add setup py
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--delete',
@@ -262,5 +286,6 @@ if __name__ == '__main__':
     prepare_target_dir()
     build_tree('./')
 
-    with open(os_path.join(TARGET_DIR, 'feed'), 'wb') as f:
-        f.write(FEED.generate_xml())
+    create_rss_feed(FEED, TRANSFORMER.cache.values())
+
+    build_tags(TRANSFORMER.cache.values())

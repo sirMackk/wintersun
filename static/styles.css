@@ -32,6 +32,12 @@ header h2 a:hover {
 
 h5.date {
   font-size: 15px;
+  margin-bottom: 0;
+  font-weight: normal;
+}
+
+h5.tags {
+  margin-top: 5px;
   font-weight: normal;
 }
 

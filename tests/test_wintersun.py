@@ -119,15 +119,6 @@ class TestWintersun(unittest.TestCase):
 
         self.assertEqual(entry, expected_result)
 
-    @mock.patch('wintersun.generate_atom_entry_dict')
-    def test_update_feed(self, mock_entry_dict):
-        feed = mock.Mock()
-        meta = {'filename': 'file1', 'path': 'wintersun/'}
-
-        wintersun.update_feed(feed, '', meta)
-        self.assertTrue(mock_entry_dict.called)
-        self.assertTrue(feed.add_entry.called)
-
     @mock.patch('wintersun.os_path.join')
     def test_build_path(self, mock_os_path):
         wintersun.build_path('file1', './wintersun/posts')
