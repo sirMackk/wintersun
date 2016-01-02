@@ -81,21 +81,45 @@ section {
 }
 
 aside {
-  padding-left: 50px;
   max-width: 250px;
   display: inline-block;
   font-size: 14px;
+}
+
+aside .top-drawer {
+  position: fixed;
+  width: 25%;
+  top: 10px;
+  z-index: -10;
+}
+
+aside .top-drawer p {
+  font-size: 22px;
 }
 
 aside .about {
   margin-top: 22px;
   padding: 5px 10px;
   background-color: #EEE;
+  position: fixed;
+  width: 25%;
 }
 
 aside .about .controls a:visited {
   color: #B88630;
 }
+
+@media (max-width: 1024px) {
+  aside .top-drawer {
+    display: None;
+  }
+
+  aside .about {
+    position: relative;
+    width: 100%;
+  }
+}
+
 
 a {
   text-decoration: none;
