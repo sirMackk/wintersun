@@ -109,7 +109,18 @@ aside .about .controls a:visited {
   color: #B88630;
 }
 
+aside .bottom-drawer {
+  position: fixed;
+  top: 385px;
+  width: 25%;
+}
+
 @media (max-width: 1024px) {
+  aside {
+    float: None;
+    max-width: none;
+  }
+
   aside .top-drawer {
     display: None;
   }
@@ -117,6 +128,18 @@ aside .about .controls a:visited {
   aside .about {
     position: relative;
     width: 100%;
+    max-width: 200px;
+    float: left;
+  }
+
+  aside .bottom-drawer {
+    position: relative;
+    width: 100%;
+    margin-top: 22px;
+    max-width: 200px;
+    float: left;
+    top: auto;
+    margin-left: 25px;
   }
 }
 
