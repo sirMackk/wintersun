@@ -22,32 +22,23 @@
     <aside>
       {% block aside %}
       <div class="top-drawer">
-        <p>Is a mountain only a huge stone? Is a planet an enormous mountain? - S. Lem</p>
+        <p><em>Is a mountain only a huge stone? Is a planet an enormous mountain?</em> - S. Lem</p>
       </div>
-      <div class="about">
-        <p>
-          Hi, I'm Matt.
-        </p>
-        <p>
-          I explore and build. Mainly with Python, but anything goes. This is a log of it all.
-        </p>
-        <div class="controls">
-          <a href="/hire-me.html">Hire Me</a>
-          <a href="/feed" target="_blank">Feed</a>
-          <a href="https://twitter.com/matt_voidptr" target="_blank">Twitter</a>
-          <a href="/">Archives</a>
-          <a href="http://photolog.mattscodecave.com">The Photolog!</a>
-        </div>
-        </p>
-      </div>
+      {% include "about.html" %}
       <div class="bottom-drawer">
         {% include "mail_form.html" %}
       </div>
       {% endblock aside %}
     </aside>
-    <section>
+    <section class="main">
       {% block content %}
       {% endblock content %}
+    </section>
+    <section class="mobile-bottom">
+      <div class="bottom-drawer">
+        {% include "about.html" %}
+        {% include "mail_form.html" %}
+      </div>
     </section>
     <!-- javascript -->
     <script src="/static/highlight.pack.js"></script>

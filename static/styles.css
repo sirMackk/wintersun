@@ -1,3 +1,10 @@
+html {
+  box-sizing: border-box;
+}
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
 header {
   background-color: #3a3a3a;
   padding: 12px 5% 12px 12%;
@@ -61,7 +68,7 @@ header h2 a:visited {
 body {
   font-size: 18px;
   line-height: 1.6;
-  color: #333;
+  color: #292929;
   text-shadow: 0px 1px 1px rgba(0, 0, 0, 0.1);
   background-color: #fdfdfd;
   margin: 0;
@@ -71,54 +78,85 @@ body {
 body pre {
   display: inline-block;
   font-size: 13px;
+  white-space: pre-wrap;
+  width: 100%;
 }
 
-section {
-  padding: 5px 5% 65px 12%;
+section.main {
+  padding: 5px 5% 65px 0;
+  margin-left: 12%;
   max-width: 650px;
   display: inline-block;
   float: left;
 }
 
 aside {
-  max-width: 250px;
+  max-width: 300px;
   display: inline-block;
   font-size: 14px;
 }
 
 aside .top-drawer {
-  position: fixed;
-  width: 25%;
-  top: 10px;
-  z-index: -10;
+  padding: 10px;
 }
 
 aside .top-drawer p {
-  font-size: 22px;
+  font-size: 16px;
 }
 
-aside .about {
-  margin-top: 22px;
+.about {
+  margin: 12px 0 22px;
   padding: 5px 10px;
   background-color: #EEE;
-  position: fixed;
-  width: 25%;
 }
 
-aside .about .controls a:visited {
+.about p {
+  font-size: 16px;
+
+}
+
+.about .controls a:visited {
   color: #B88630;
 }
 
-aside .bottom-drawer {
-  position: fixed;
-  top: 385px;
-  width: 25%;
+.mobile-bottom {
+  display: None;
 }
 
-@media (max-width: 1024px) {
+
+@media (max-width: 1094px) {
+  aside {
+    display: none;
+  }
+
+  section.main {
+    margin-left: 30px;
+  }
+
+  aside .bottom-drawer, aside .about {
+    display: none;
+  }
+
+  .mobile-bottom {
+    display: inline-block;
+    max-width: 650px;
+    width: 100%;
+    padding-left: 30px;
+    margin-bottom: 25px;
+  }
+}
+
+@media (max-width: 360px) {
+  section.main {
+    padding: 5px 20px 65px;
+    margin-left: 0;
+  }
+
   aside {
     float: None;
     max-width: none;
+    position: relative;
+    padding-left: 0;
   }
 
   aside .top-drawer {
@@ -127,19 +165,14 @@ aside .bottom-drawer {
 
   aside .about {
     position: relative;
-    width: 100%;
-    max-width: 200px;
-    float: left;
   }
 
   aside .bottom-drawer {
-    position: relative;
-    width: 100%;
-    margin-top: 22px;
-    max-width: 200px;
-    float: left;
-    top: auto;
-    margin-left: 25px;
+    display: None;
+  }
+
+  .mobile-bottom {
+    padding: 0;
   }
 }
 
@@ -158,6 +191,10 @@ a:visited {
 
 a:hover {
   border-bottom: 1px dashed #fa6900;
+}
+
+a.hire {
+  font-size: 18px;
 }
 
 .link-list {

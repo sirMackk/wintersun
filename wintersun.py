@@ -29,7 +29,7 @@ TAG_DIR = 'tags'
 OUTPUT_ENCODING = 'utf-8-sig'
 
 EXCLUDED_DIRS = [TEMPLATE_DIR, './media', STATIC_DIR, './tests',
-                 TARGET_DIR, './wintersun']
+                 TARGET_DIR, './wintersun', '.git']
 
 PostItem = namedtuple('PostItem', 'filename, title, date, tags')
 TRANSFORMER = CachingTransformer(MarkdownTransformer)
