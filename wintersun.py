@@ -1,17 +1,17 @@
 import argparse
-import os.path as os_path
-from sys import exit, stdout
-import os
-from shutil import rmtree, copytree
-import re
-from collections import namedtuple, defaultdict
 import logging
+import os
+import os.path as os_path
+import re
+from collections import defaultdict, namedtuple
+from datetime import datetime
+from shutil import copytree, rmtree
+from sys import exit, stdout
 
 from jinja2 import Environment, PackageLoader
-from datetime import datetime
 
-from transformers import MarkdownTransformer, CachingTransformer
 from atom_generator import Feed, create_timestamp
+from transformers import CachingTransformer, MarkdownTransformer
 
 ARGS = None
 

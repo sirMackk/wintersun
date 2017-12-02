@@ -1,5 +1,5 @@
-import unittest
 import mock
+import unittest
 from StringIO import StringIO
 
 from transformers import MarkdownTransformer
