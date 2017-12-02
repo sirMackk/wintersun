@@ -7,6 +7,8 @@
     <link href="/static/styles.css" media="all" rel="stylesheet">
     <link href="/static/mail.css" media="all" rel="stylesheet">
     <link href="/static/default.css" media="all" rel="stylesheet">
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
   </head>
@@ -22,7 +24,14 @@
     <aside>
       {% block aside %}
       <div class="top-drawer">
-        <p><em>Is a mountain only a huge stone? Is a planet an enormous mountain?</em> - S. Lem</p>
+        <p>
+          <em>Is a mountain only a huge stone? Is a planet an enormous mountain?</em>
+        </p>
+        <p><small> - <a href="https://en.wikipedia.org/wiki/Stanis%C5%82aw_Lem" target="_blank">S. Lem</a></small></p>
+          <p>
+            <em>You just look at the issue and you say "Good".</em>
+        </p>
+        <p><small><a href="https://en.wikipedia.org/wiki/Jocko_Willink" target="_blank"> - J. Willink</a></small></p>
       </div>
       {% include "about.html" %}
       <div class="bottom-drawer">

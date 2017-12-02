@@ -82,16 +82,21 @@ body pre {
   width: 100%;
 }
 
+body p code {
+  font-size: 13px;
+  background-color: #F0F0F0;
+}
+
 section.main {
   padding: 5px 5% 65px 0;
   margin-left: 12%;
-  max-width: 650px;
+  max-width: 775px;
   display: inline-block;
   float: left;
 }
 
 aside {
-  max-width: 300px;
+  max-width: 330px;
   display: inline-block;
   font-size: 14px;
 }
@@ -193,8 +198,8 @@ a:hover {
   border-bottom: 1px dashed #fa6900;
 }
 
-a.hire {
-  font-size: 18px;
+a.big-link {
+  font-size: 16px;
 }
 
 .link-list {
@@ -216,4 +221,15 @@ footer {
   font-size: 13px;
   padding: 5px 10px;
   background-color: #EEE;
+}
+
+blockquote {
+  background-color: #F5F5F5;
+  padding: 2px 12px;
+  font-style: italic;
+}
+
+blockquote blockquote {
+  background-color: #E5E5E5;
+  padding: 3px 12px;
 }
