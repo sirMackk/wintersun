@@ -1,8 +1,8 @@
-import unittest
-import mock
 import logging
+import unittest
+from unittest import mock
 
-import wintersun
+from wintersun import wintersun
 
 logging.disable(logging.INFO)
 
@@ -17,8 +17,8 @@ class TestWintersun(unittest.TestCase):
             ['test1.md', 'test2.html', 'test3.m', 'test4md.txt']))
         self.assertEqual(markdown_files, ['test1.md'])
 
-    @mock.patch('wintersun.os_path')
-    @mock.patch('wintersun.os')
+    @mock.patch('wintersun.wintersun.os_path')
+    @mock.patch('wintersun.wintersun.os')
     def test_filter_items_from_path_dirs(self, mock_os, mock_os_path):
         mock_os.listdir.return_value = ['file1', 'dir1']
         mock_os_path.isdir.side_effect = lambda full_path: full_path == 'dir1'
@@ -33,8 +33,8 @@ class TestWintersun(unittest.TestCase):
         mock_os.listdir.assert_called_with('./current-dir')
         self.assertEqual(dirs, ['dir1'])
 
-    @mock.patch('wintersun.os_path')
-    @mock.patch('wintersun.os')
+    @mock.patch('wintersun.wintersun.os_path')
+    @mock.patch('wintersun.wintersun.os')
     def test_filter_items_from_path_files(self, mock_os, mock_os_path):
         mock_os.listdir.return_value = ['file1', 'dir1']
         mock_os_path.isfile.side_effect = lambda x: x == 'file1'
@@ -63,7 +63,7 @@ class TestWintersun(unittest.TestCase):
         self.assertEqual(
             wintersun.standardize_filename(filepath), 'markdown')
 
-    @mock.patch('wintersun.filenames_by_date')
+    @mock.patch('wintersun.wintersun.filenames_by_date')
     def test_generate_post_index(self, mock_filenames_by_date):
         mock_filenames_by_date.return_value = ('file1', 'file2',)
         dir_path = './wintersun/posts'
@@ -74,21 +74,23 @@ class TestWintersun(unittest.TestCase):
         self.assertIn('file1', files)
         self.assertIn('file2', files)
 
-    @mock.patch('__builtin__.open')
-    @mock.patch('wintersun.MarkdownTransformer')
-    @mock.patch('wintersun.filter_items_from_path')
+    @mock.patch('wintersun.transformers.open', mock.mock_open())
+    @mock.patch('wintersun.wintersun.TRANSFORMER.get_or_create')
+    @mock.patch('wintersun.wintersun.filter_items_from_path')
     def test_filenames_by_date(self, mock_filter_items_from_path,
-                               mock_transformer, mock_open):
-
-        mock_filter_items_from_path.return_value = ('file1.md', 'file2.md', )
-
-        mock_transformer.return_value.__enter__.return_value = mock_transformer
-        type(mock_transformer).Meta = mock.PropertyMock(side_effect=[
-            {'title': 'title1',
-                'date': '2015-09-22 20:00:00'},
-            {'title': 'title2',
-                'date': '2015-08-22 20:00:00'}
-        ])
+                               mock_get_or_create):
+        mock_filter_items_from_path.return_value = (
+            'file1.md',
+            'file2.md',
+        )
+        mock_get_or_create.side_effect = [
+            (None, {'title': 'title1',
+             'date': '2015-09-22 20:00:00',
+             'tags': ['none']}),
+            (None, {'title': 'title2',
+             'date': '2015-08-22 20:00:00',
+             'tags': ['none']})
+        ]
 
         sorted_filenames = wintersun.filenames_by_date('./posts')
         self.assertEqual(sorted_filenames[0].title, 'title1')
@@ -119,22 +121,22 @@ class TestWintersun(unittest.TestCase):
 
         self.assertEqual(entry, expected_result)
 
-    @mock.patch('wintersun.os_path.join')
+    @mock.patch('wintersun.wintersun.os_path.join')
     def test_build_path(self, mock_os_path):
         wintersun.build_path('file1', './wintersun/posts')
         self.assertTrue(mock_os_path.called)
 
-    @mock.patch('__builtin__.open')
-    def test_write_output_file(self, mock_open):
-        target_dir = wintersun.TARGET_DIR = 'target'
-        meta = {'path': 'wintersun/posts', 'filename': 'file1'}
+    def test_write_output_file(self):
+        with mock.patch('builtins.open', mock.mock_open()) as mock_open:
+            target_dir = wintersun.TARGET_DIR = 'target'
+            meta = {'path': 'wintersun/posts', 'filename': 'file1'}
 
-        wintersun.write_output_file('', meta)
-        mock_open.assert_called_with(target_dir + '/' + meta['path'] + '/' +
-                                     'file1.html', mode='w')
-        self.assertTrue(mock_open().__enter__().write.called)
+            wintersun.write_output_file('', meta)
+            mock_open.assert_called_with(target_dir + '/' + meta['path'] + '/' +
+                                         'file1.html', mode='w')
+            self.assertTrue(mock_open().__enter__().write.called)
 
-    @mock.patch('wintersun.env')
+    @mock.patch('wintersun.wintersun.env')
     def test_render_template_post(self, mock_env):
         mock_template = mock.Mock()
         mock_env.get_template.return_value = mock_template
@@ -147,8 +149,8 @@ class TestWintersun(unittest.TestCase):
         mock_env.get_template.assert_called_with('post.html')
         self.assertTrue(mock_template.render.called)
 
-    @mock.patch('wintersun.env')
-    @mock.patch('wintersun.generate_post_index')
+    @mock.patch('wintersun.wintersun.env')
+    @mock.patch('wintersun.wintersun.generate_post_index')
     def test_render_template_index(self, mock_gen_post_index, mock_env):
         mock_gen_post_index.return_value = (1, 2,)
         meta = {'title': 'title', 'template': u'Index',
@@ -158,7 +160,7 @@ class TestWintersun(unittest.TestCase):
         wintersun.render_template(contents, meta)
         self.assertTrue(mock_gen_post_index.called)
 
-    @mock.patch('wintersun.build_tree')
+    @mock.patch('wintersun.wintersun.build_tree')
     def test_transform_next_dir_level_no_directories(self, mock_build_tree):
         path = 'wintersun/posts'
         directories = []
@@ -167,15 +169,15 @@ class TestWintersun(unittest.TestCase):
 
         self.assertFalse(mock_build_tree.called)
 
-    @mock.patch('wintersun.build_tree')
+    @mock.patch('wintersun.wintersun.build_tree')
     def test_transform_next_dir_level_excluded_dirs(self, mock_build_tree):
         path = 'wintersun/posts'
 
         wintersun.transform_next_dir_level(path, wintersun.EXCLUDED_DIRS)
         self.assertFalse(mock_build_tree.called)
 
-    @mock.patch('wintersun.os.mkdir')
-    @mock.patch('wintersun.build_tree')
+    @mock.patch('wintersun.wintersun.os.mkdir')
+    @mock.patch('wintersun.wintersun.build_tree')
     def test_transform_next_dir_level(self, mock_build_tree, mock_mkdir):
         path = 'wintersun/posts'
         directories = ['dir1', 'dir2']
@@ -183,16 +185,16 @@ class TestWintersun(unittest.TestCase):
 
         wintersun.transform_next_dir_level(path, directories)
 
-        mock_mkdir.assert_has_call([mock.call(expected_path + '/dir1'),
-                                    mock.call(expected_path + '/dir2')])
+        mock_mkdir.assert_has_calls([mock.call(expected_path + '/dir1'),
+                                     mock.call(expected_path + '/dir2')])
         self.assertTrue(mock_build_tree.called)
 
-    @mock.patch('__builtin__.open')
-    @mock.patch('wintersun.transform_next_dir_level')
-    @mock.patch('wintersun.filter_items_from_path')
-    @mock.patch('wintersun.MarkdownTransformer')
-    @mock.patch('wintersun.render_template')
-    @mock.patch('wintersun.write_output_file')
+    @mock.patch('builtins.open')
+    @mock.patch('wintersun.wintersun.transform_next_dir_level')
+    @mock.patch('wintersun.wintersun.filter_items_from_path')
+    @mock.patch('wintersun.wintersun.MarkdownTransformer')
+    @mock.patch('wintersun.wintersun.render_template')
+    @mock.patch('wintersun.wintersun.write_output_file')
     def test_build_tree(self, mock_write_output_file,
                         mock_render_template, mock_md_tranformer,
                         mock_filter_items_from_path,
@@ -205,11 +207,11 @@ class TestWintersun(unittest.TestCase):
         self.assertEqual(mock_write_output_file.call_count, 2)
         self.assertTrue(mock_transform_next_dir_level.called)
 
-    @mock.patch('wintersun.copytree')
-    @mock.patch('wintersun.os.mkdir')
-    @mock.patch('wintersun.os_path')
-    @mock.patch('wintersun.rmtree')
-    @mock.patch('wintersun.ARGS')
+    @mock.patch('wintersun.wintersun.copytree')
+    @mock.patch('wintersun.wintersun.os.mkdir')
+    @mock.patch('wintersun.wintersun.os_path')
+    @mock.patch('wintersun.wintersun.rmtree')
+    @mock.patch('wintersun.wintersun.ARGS')
     def test_prepare_target_dir_target_dir_exists(self, mock_ARGS, mock_rmtree,
                                                   mock_os_path, mock_mkdir,
                                                   mock_copytree):
@@ -223,9 +225,9 @@ class TestWintersun(unittest.TestCase):
         self.assertTrue(mock_mkdir.called)
         self.assertTrue(mock_copytree.called)
 
-    @mock.patch('wintersun.copytree')
-    @mock.patch('wintersun.os.mkdir')
-    @mock.patch('wintersun.os_path')
+    @mock.patch('wintersun.wintersun.copytree')
+    @mock.patch('wintersun.wintersun.os.mkdir')
+    @mock.patch('wintersun.wintersun.os_path')
     def test_prepare_target_dir_target_dir_dont_exist(self,
                                                       mock_os_path,
                                                       mock_mkdir,
@@ -237,7 +239,7 @@ class TestWintersun(unittest.TestCase):
         self.assertTrue(mock_mkdir.called)
         self.assertTrue(mock_copytree.called)
 
-    @mock.patch('wintersun.filter_items_from_path')
+    @mock.patch('wintersun.wintersun.filter_items_from_path')
     def test_get_files_and_directories_from(self, mock_filter_items):
         mock_filter_items.side_effect = [
             ['dir1', 'dir2'],
