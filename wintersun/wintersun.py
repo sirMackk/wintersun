@@ -1,4 +1,5 @@
 import argparse
+import configparser
 import logging
 import os
 import os.path as os_path
@@ -13,7 +14,19 @@ from jinja2 import Environment, PackageLoader
 from wintersun.atom_generator import Feed, create_timestamp
 from wintersun.transformers import CachingTransformer, MarkdownTransformer
 
-ARGS = None
+CONFIG = None
+FEED = None
+
+
+def get_config(path):
+    parser = configparser.ConfigParser()
+    parser.read(path)
+    config = dict(parser['DEFAULT'])
+    if 'excluded_dirs' in config:
+        excluded_dirs = config['excluded_dirs'].split(',')
+        config['excluded_dirs'] = [e_dir.strip() for e_dir in excluded_dirs]
+    return config
+
 
 MARKDOWN_FILTER = re.compile(r'([a-zA-Z0-9_-]+)\.md')
 TEMPLATED_FILENAME_FILTER = re.compile(r'[^a-z^A-Z^0-9-]')
@@ -21,35 +34,13 @@ LEADING_SLASHES = re.compile(r'^[a-zA-Z0-9\.\/]*\/')
 RELATIVE_SLASHES = re.compile(r'\./(?![a-zA-Z])')
 TRAILING_SUFFIX = re.compile(r'\.md$')
 
-SITE_URL = 'http://mattscodecave.com'
-TEMPLATE_DIR = './wintersun/templates'
-STATIC_DIR = './wintersun/static'
-TARGET_DIR = './site'
-TAG_DIR = 'tags'
 OUTPUT_ENCODING = 'utf-8-sig'
-
-EXCLUDED_DIRS = [TEMPLATE_DIR, './media', STATIC_DIR, './tests',
-                 TARGET_DIR, './wintersun', '.git']
 
 PostItem = namedtuple('PostItem', 'filename, title, date, tags')
 TRANSFORMER = CachingTransformer(MarkdownTransformer)
 
-FEED = Feed([
-    {'name': 'title',
-     'value': 'mattscodecave.com'},
-    {'name': 'link',
-        'attributes': {
-            'rel': 'self',
-            'href': SITE_URL + '/'}},
-    {'name': 'link',
-        'attributes': {
-            'rel': 'alternate',
-            'href': SITE_URL}},
-    {'name': 'id',
-        'value': SITE_URL + '/'},
-    {'name': 'updated',
-        'value': create_timestamp()}])
 
+# FileSystemLoader
 env = Environment(loader=PackageLoader('wintersun'))
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler(stdout))
@@ -116,7 +107,7 @@ def write_output_file(contents, meta):
                 out_filename)
 
     output_destination_path = os_path.join(
-        TARGET_DIR,
+        CONFIG['target_dir'],
         path,
         out_filename)
 
@@ -126,9 +117,11 @@ def write_output_file(contents, meta):
 
 def transform_next_dir_level(path, directories):
     for directory in directories:
-        if directory not in EXCLUDED_DIRS:
+        all_excluded_dirs = CONFIG['excluded_dirs'] + [
+            CONFIG['template_dir'], CONFIG['static_dir'], CONFIG['target_dir']]
+        if directory not in all_excluded_dirs:
             logger.info(u'making dir: %s', directory)
-            os.mkdir(os_path.join(TARGET_DIR, path, directory), 0o755)
+            os.mkdir(os_path.join(CONFIG['target_dir'], path, directory), 0o755)
             build_tree(os_path.join(path, directory))
 
 
@@ -170,19 +163,19 @@ def convert_date_time(date_string):
 
 def generate_atom_entry_dict(contents, meta):
     entry = {
-        u'title': meta['title'],
-        u'link': generate_entry_link(meta['filename'], meta['path']),
-        u'published': create_timestamp(meta['date']),
-        u'updated': create_timestamp(meta['date']),
-        u'name': u'Matt',
-        u'content': contents[:100] + '...'}
+        'title': meta['title'],
+        'link': generate_entry_link(meta['filename'], meta['path']),
+        'published': create_timestamp(meta['date']),
+        'updated': create_timestamp(meta['date']),
+        'name': CONFIG['author'],
+        'content': contents[:100] + '...'}
 
     return entry
 
 
 def generate_entry_link(md_file, path):
     return '/'.join(
-        [SITE_URL,
+        [CONFIG['site_url'],
          path.replace('./', ''),
          standardize_filename(md_file) + '.html'])
 
@@ -219,7 +212,7 @@ def generate_tag_index(tag, items):
         tagged_items=items
     )
 
-    dest = os_path.join(TARGET_DIR, TAG_DIR, tag + '.html')
+    dest = os_path.join(CONFIG['target_dir'], CONFIG['tag_dir'], tag + '.html')
     logger.info('Writing %s tag to %s', tag, dest)
     with open(dest, 'w') as f:
         f.write(rendered.encode('utf-8-sig'))
@@ -242,25 +235,30 @@ def build_tags(items):
 
 
 def prepare_target_dir():
-    def setup_target_dir():
-        os.mkdir(TARGET_DIR, 0o755)
-        os.mkdir(os_path.join(TARGET_DIR, TAG_DIR), 0o755)
-        copytree(STATIC_DIR, os_path.join(TARGET_DIR, './static'))
+    target_dir = CONFIG['target_dir']
+    tag_dir = CONFIG['tag_dir']
+    delete_target_dir = CONFIG['delete_target_dir']
+    static_dir = CONFIG['static_dir']
 
-    if not os_path.exists(TARGET_DIR):
+    def setup_target_dir():
+        os.mkdir(target_dir, 0o755)
+        os.mkdir(os_path.join(target_dir, tag_dir), 0o755)
+        copytree(static_dir, os_path.join(target_dir, './static'))
+
+    if not os_path.exists(target_dir):
         setup_target_dir()
         return
 
-    if os_path.isdir(TARGET_DIR):
-        if ARGS.delete:
-            rmtree(TARGET_DIR)
+    if os_path.isdir(target_dir):
+        if delete_target_dir:
+            rmtree(target_dir)
             setup_target_dir()
         else:
             exit()
 
 
 def create_rss_feed(feed, items):
-    with open(os_path.join(TARGET_DIR, 'feed'), 'wb') as f:
+    with open(os_path.join(CONFIG['target_dir'], 'feed'), 'wb') as f:
         for content, meta in items:
             if is_template('post', meta):
                 feed.add_entry(generate_atom_entry_dict(content, meta))
@@ -270,18 +268,36 @@ def create_rss_feed(feed, items):
 if __name__ == '__main__':
     # add setup py
     parser = argparse.ArgumentParser()
+    parser.add_argument('manifest', help='INI file containing blog config')
     parser.add_argument('-d', '--delete',
                         help=("Remove target output directory before "
                               "generating. Default: {}").format(
-                                  TARGET_DIR),
+                                  CONFIG['target_dir']),
                         action='store_true')
     parser.add_argument('-t', '--target',
                         help=("Change target output directory."
-                              "Default: {}").format(TARGET_DIR))
+                              "Default: {}").format(CONFIG['target_dir']))
 
-    ARGS = parser.parse_args()
-    if ARGS.target:
-        TARGET_DIR = ARGS.target
+    args = parser.parse_args()
+    CONFIG = get_config(args.manifest)
+    CONFIG['delete_target_dir'] = args.delete
+
+    # pull out into own function
+    FEED = Feed([
+        {'name': 'title',
+         'value': 'mattscodecave.com'},
+        {'name': 'link',
+            'attributes': {
+                'rel': 'self',
+                'href': CONFIG['site_url'] + '/'}},
+        {'name': 'link',
+            'attributes': {
+                'rel': 'alternate',
+                'href': CONFIG['site_url']}},
+        {'name': 'id',
+            'value': CONFIG['site_url'] + '/'},
+        {'name': 'updated',
+            'value': create_timestamp()}])
 
     prepare_target_dir()
     build_tree('./')
