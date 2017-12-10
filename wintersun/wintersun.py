@@ -9,7 +9,7 @@ from datetime import datetime
 from shutil import copytree, rmtree
 from sys import exit, stdout
 
-from jinja2 import Environment, PackageLoader
+from jinja2 import Environment, FileSystemLoader
 
 from wintersun.atom_generator import Feed, create_timestamp
 from wintersun.transformers import CachingTransformer, MarkdownTransformer
@@ -25,7 +25,14 @@ def get_config(path):
     if 'excluded_dirs' in config:
         excluded_dirs = config['excluded_dirs'].split(',')
         config['excluded_dirs'] = [e_dir.strip() for e_dir in excluded_dirs]
+
+    config['template_env'] = get_template_env(config['template_dir'])
     return config
+
+
+def get_template_env(template_dir):
+    # integration test
+    return Environment(loader=FileSystemLoader(template_dir))
 
 
 MARKDOWN_FILTER = re.compile(r'([a-zA-Z0-9_-]+)\.md')
@@ -40,8 +47,6 @@ PostItem = namedtuple('PostItem', 'filename, title, date, tags')
 TRANSFORMER = CachingTransformer(MarkdownTransformer)
 
 
-# FileSystemLoader
-env = Environment(loader=PackageLoader('wintersun'))
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler(stdout))
 logger.setLevel(logging.INFO)
@@ -96,7 +101,7 @@ def render_template(contents, meta):
 
 
 def get_template(title):
-    return env.get_template(title.lower() + '.html')
+    return CONFIG['template_env'].get_template(title.lower() + '.html')
 
 
 def write_output_file(contents, meta):
@@ -257,7 +262,22 @@ def prepare_target_dir():
             exit()
 
 
-def create_rss_feed(feed, items):
+def create_rss_feed(config, items):
+    feed = Feed([
+        {'name': 'title',
+         'value': 'mattscodecave.com'},
+        {'name': 'link',
+            'attributes': {
+                'rel': 'self',
+                'href': config['site_url'] + '/'}},
+        {'name': 'link',
+            'attributes': {
+                'rel': 'alternate',
+                'href': config['site_url']}},
+        {'name': 'id',
+            'value': config['site_url'] + '/'},
+        {'name': 'updated',
+            'value': create_timestamp()}])
     with open(os_path.join(CONFIG['target_dir'], 'feed'), 'wb') as f:
         for content, meta in items:
             if is_template('post', meta):
@@ -283,25 +303,10 @@ if __name__ == '__main__':
     CONFIG['delete_target_dir'] = args.delete
 
     # pull out into own function
-    FEED = Feed([
-        {'name': 'title',
-         'value': 'mattscodecave.com'},
-        {'name': 'link',
-            'attributes': {
-                'rel': 'self',
-                'href': CONFIG['site_url'] + '/'}},
-        {'name': 'link',
-            'attributes': {
-                'rel': 'alternate',
-                'href': CONFIG['site_url']}},
-        {'name': 'id',
-            'value': CONFIG['site_url'] + '/'},
-        {'name': 'updated',
-            'value': create_timestamp()}])
 
     prepare_target_dir()
     build_tree('./')
 
-    create_rss_feed(FEED, TRANSFORMER.cache.values())
+    create_rss_feed(CONFIG, TRANSFORMER.cache.values())
 
     build_tags(TRANSFORMER.cache.values())
