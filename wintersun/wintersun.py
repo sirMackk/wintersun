@@ -41,7 +41,7 @@ LEADING_SLASHES = re.compile(r'^[a-zA-Z0-9\.\/]*\/')
 RELATIVE_SLASHES = re.compile(r'\./(?![a-zA-Z])')
 TRAILING_SUFFIX = re.compile(r'\.md$')
 
-OUTPUT_ENCODING = 'utf-8-sig'
+OUTPUT_ENCODING = 'utf-8'
 
 PostItem = namedtuple('PostItem', 'filename, title, date, tags')
 TRANSFORMER = CachingTransformer(MarkdownTransformer)
@@ -49,7 +49,6 @@ TRANSFORMER = CachingTransformer(MarkdownTransformer)
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler(stdout))
-logger.setLevel(logging.INFO)
 
 
 def build_tree(path):
@@ -116,8 +115,10 @@ def write_output_file(contents, meta):
         path,
         out_filename)
 
-    with open(output_destination_path, mode='wb') as out:
-        out.write(contents.encode(OUTPUT_ENCODING))
+    with open(
+            output_destination_path, mode='w',
+            encoding=OUTPUT_ENCODING) as out:
+        out.write(contents)
 
 
 def transform_next_dir_level(path, directories):
@@ -223,8 +224,8 @@ def generate_tag_index(tag, items):
 
     dest = os_path.join(CONFIG['target_dir'], CONFIG['tag_dir'], tag + '.html')
     logger.info('Writing %s tag to %s', tag, dest)
-    with open(dest, 'wb') as f:
-        f.write(rendered.encode('utf-8-sig'))
+    with open(dest, 'w', encoding=OUTPUT_ENCODING) as f:
+        f.write(rendered)
 
 
 def build_tags(items):
@@ -282,7 +283,10 @@ def create_rss_feed(config, items):
             'value': config['site_url'] + '/'},
         {'name': 'updated',
             'value': create_timestamp()}])
-    with open(os_path.join(CONFIG['target_dir'], 'feed'), 'w') as f:
+    with open(
+            os_path.join(CONFIG['target_dir'], 'feed'),
+            'w',
+            encoding=OUTPUT_ENCODING) as f:
         for content, meta in items:
             if is_template('post', meta):
                 feed.add_entry(generate_atom_entry_dict(content, meta))
@@ -291,7 +295,6 @@ def create_rss_feed(config, items):
 
 def main():
     global CONFIG
-    # add setup py
     parser = argparse.ArgumentParser()
     parser.add_argument('manifest', help='INI file containing blog config')
     parser.add_argument(
@@ -309,9 +312,8 @@ def main():
 
     args = parser.parse_args()
     CONFIG = get_config(args.manifest)
+    logger.setLevel(CONFIG.get('log_level', 'INFO').upper())
     CONFIG['delete_target_dir'] = args.delete
-
-    # pull out into own function
 
     prepare_target_dir()
     build_tree('./')
