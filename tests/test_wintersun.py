@@ -183,7 +183,7 @@ class TestWintersun(unittest.TestCase):
                 'filename': 'file1.md', 'path': 'wintersun/posts'}
         contents = 'Lorem ipsum ' * 100
 
-        with mock.patch.object(wintersun, 'CONFIG', self.config) as conf:
+        with mock.patch.object(wintersun, 'CONFIG', self.config):
             wintersun.render_template(contents, meta)
             self.assertTrue(mock_gen_post_index.called)
 
@@ -268,7 +268,7 @@ class TestWintersun(unittest.TestCase):
                                                       mock_os_path,
                                                       mock_mkdir,
                                                       mock_copytree):
-        with mock.patch.object(wintersun, 'CONFIG', self.config) as conf:
+        with mock.patch.object(wintersun, 'CONFIG', self.config):
             mock_os_path.exists.return_value = False
 
             wintersun.prepare_target_dir()
