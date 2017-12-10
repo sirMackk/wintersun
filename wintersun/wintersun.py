@@ -116,7 +116,7 @@ def write_output_file(contents, meta):
         path,
         out_filename)
 
-    with open(output_destination_path, mode='w') as out:
+    with open(output_destination_path, mode='wb') as out:
         out.write(contents.encode(OUTPUT_ENCODING))
 
 
@@ -124,9 +124,13 @@ def transform_next_dir_level(path, directories):
     for directory in directories:
         all_excluded_dirs = CONFIG['excluded_dirs'] + [
             CONFIG['template_dir'], CONFIG['static_dir'], CONFIG['target_dir']]
+        all_excluded_dirs = [
+            os_path.join(path, directory) for directory in all_excluded_dirs
+        ]
         if directory not in all_excluded_dirs:
-            logger.info(u'making dir: %s', directory)
-            os.mkdir(os_path.join(CONFIG['target_dir'], path, directory), 0o755)
+            new_dir_path = os_path.join(CONFIG['target_dir'], path, directory)
+            logger.info('making dir: %s at %s', directory, new_dir_path)
+            os.mkdir(new_dir_path, 0o755)
             build_tree(os_path.join(path, directory))
 
 
@@ -219,7 +223,7 @@ def generate_tag_index(tag, items):
 
     dest = os_path.join(CONFIG['target_dir'], CONFIG['tag_dir'], tag + '.html')
     logger.info('Writing %s tag to %s', tag, dest)
-    with open(dest, 'w') as f:
+    with open(dest, 'wb') as f:
         f.write(rendered.encode('utf-8-sig'))
 
 
@@ -278,7 +282,7 @@ def create_rss_feed(config, items):
             'value': config['site_url'] + '/'},
         {'name': 'updated',
             'value': create_timestamp()}])
-    with open(os_path.join(CONFIG['target_dir'], 'feed'), 'wb') as f:
+    with open(os_path.join(CONFIG['target_dir'], 'feed'), 'w') as f:
         for content, meta in items:
             if is_template('post', meta):
                 feed.add_entry(generate_atom_entry_dict(content, meta))

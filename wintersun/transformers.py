@@ -16,8 +16,8 @@ class CachingTransformer(object):
         if key in self.cache:
             return self.cache[key]
         else:
-            with open(filename) as f:
-                contents, meta = self._convert(f.read().encode('utf-8-sig'))
+            with open(filename, 'r') as f:
+                contents, meta = self._convert(f.read())
                 meta['filename'], meta['path'] = filename, path
                 self.cache[key] = (contents, meta,)
                 return contents, meta
