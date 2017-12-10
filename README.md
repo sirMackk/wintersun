@@ -1,10 +1,20 @@
 ## Wintersun
 
-A simply static site generator for my blog. Transforms a directory tree of markdown files into a directory tree of html documents.
+A static site generator that traverses the FS and transforms markdown files into html files using templates.
+
+Usage:
+
+```python
+cd ~/myblog
+wintersun -d wintersun.ini
+```
+
+The ini file contains a few settings like the template and static file directories.
+
 
 ## License
 
-Copyright (C) 2015 sirMackk
+Copyright (C) 2015-2018 sirMackk
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
