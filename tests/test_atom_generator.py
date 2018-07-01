@@ -1,5 +1,5 @@
-import unittest
 import mock
+import unittest
 
 import atom_generator
 

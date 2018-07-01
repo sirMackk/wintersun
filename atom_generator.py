@@ -1,6 +1,7 @@
-from xml.dom.minidom import Document
-import pytz
 from datetime import datetime
+from xml.dom.minidom import Document
+
+import pytz
 
 
 def create_timestamp(date=None):
@@ -13,7 +14,8 @@ def create_timestamp(date=None):
 
 
 class Feed(object):
-    # add entry should add item to list, then sort by something before generating xml
+    # add entry should add item to list,
+    # then sort by something before generating xml
     def __init__(self, settings):
         self.entry_data = []
         self.settings = settings
@@ -46,7 +48,6 @@ class Feed(object):
 
     def add_entry(self, entry):
         self.entry_data.append(entry)
-
 
     def generate_entry(self, entry_dict):
         # make into map + loop
@@ -90,7 +91,8 @@ class Feed(object):
         self.feed.appendChild(entry)
 
     def generate_xml(self, mAx=10):
-        self.entry_data.sort(key=lambda entry: entry['published'], reverse=True)
+        self.entry_data.sort(
+            key=lambda entry: entry['published'], reverse=True)
         for entry in self.entry_data[:mAx]:
             self.generate_entry(entry)
 
