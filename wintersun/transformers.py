@@ -17,7 +17,7 @@ class CachingTransformer(object):
             return self.cache[key]
         else:
             with open(filename) as f:
-                contents, meta = self._convert(unicode(f.read(), 'utf-8-sig'))
+                contents, meta = self._convert(f.read().encode('utf-8-sig'))
                 meta['filename'], meta['path'] = filename, path
                 self.cache[key] = (contents, meta,)
                 return contents, meta
@@ -36,5 +36,5 @@ class MarkdownTransformer(object):
 
     def convert(self, *args, **kwargs):
         converted = self.md.convert(*args, **kwargs)
-        meta = {k: v[0] for k, v in self.md.Meta.iteritems()}
+        meta = {k: v[0] for k, v in self.md.Meta.items()}
         return converted, meta

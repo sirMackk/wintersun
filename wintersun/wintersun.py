@@ -10,8 +10,8 @@ from sys import exit, stdout
 
 from jinja2 import Environment, PackageLoader
 
-from atom_generator import Feed, create_timestamp
-from transformers import CachingTransformer, MarkdownTransformer
+from wintersun.atom_generator import Feed, create_timestamp
+from wintersun.transformers import CachingTransformer, MarkdownTransformer
 
 ARGS = None
 
@@ -90,7 +90,7 @@ def apply_transformer(transformer, filename):
 
 
 def is_template(template_type, meta):
-    return meta['template'] == unicode(template_type).capitalize()
+    return meta['template'] == template_type.capitalize()
 
 
 def render_template(contents, meta):
@@ -128,7 +128,7 @@ def transform_next_dir_level(path, directories):
     for directory in directories:
         if directory not in EXCLUDED_DIRS:
             logger.info(u'making dir: %s', directory)
-            os.mkdir(os_path.join(TARGET_DIR, path, directory), 0755)
+            os.mkdir(os_path.join(TARGET_DIR, path, directory), 0o755)
             build_tree(os_path.join(path, directory))
 
 
@@ -243,8 +243,8 @@ def build_tags(items):
 
 def prepare_target_dir():
     def setup_target_dir():
-        os.mkdir(TARGET_DIR, 0755)
-        os.mkdir(os_path.join(TARGET_DIR, TAG_DIR), 0755)
+        os.mkdir(TARGET_DIR, 0o755)
+        os.mkdir(os_path.join(TARGET_DIR, TAG_DIR), 0o755)
         copytree(STATIC_DIR, os_path.join(TARGET_DIR, './static'))
 
     if not os_path.exists(TARGET_DIR):

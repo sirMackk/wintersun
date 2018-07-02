@@ -1,8 +1,8 @@
-import mock
 import unittest
-from StringIO import StringIO
+from io import StringIO
+from unittest import mock
 
-from transformers import MarkdownTransformer
+from wintersun.transformers import MarkdownTransformer
 
 
 class TestMarkdownTransformer(unittest.TestCase):
@@ -13,7 +13,7 @@ class TestMarkdownTransformer(unittest.TestCase):
 
     @mock.patch('markdown.Markdown')
     def test_md_transformer_reset(self, mock_md):
-        with MarkdownTransformer() as md:
+        with MarkdownTransformer():
             pass
 
         self.assertTrue(mock_md.called)

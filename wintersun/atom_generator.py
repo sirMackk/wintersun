@@ -29,7 +29,7 @@ class Feed(object):
                 el.appendChild(doc.createTextNode(setting['value']))
 
             if 'attributes' in setting:
-                for k, v in setting['attributes'].iteritems():
+                for k, v in setting['attributes'].items():
                     el.setAttribute(k, v)
 
             yield el

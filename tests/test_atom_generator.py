@@ -1,25 +1,24 @@
-import mock
 import unittest
 
-import atom_generator
+from wintersun import atom_generator
 
 
 class TestFeed(unittest.TestCase):
     settings = [
         {'name': 'title',
-        'value': 'feed-title'},
+         'value': 'feed-title'},
         {'name': 'link',
-        'attributes': {
+         'attributes': {
             'rel': 'self',
             'href': 'http://test.example.com'}},
         {'name': 'link',
-            'attributes': {
-            'rel': 'alternate',
-            'href': 'http://testing.example.com'}},
+         'attributes': {
+             'rel': 'alternate',
+             'href': 'http://testing.example.com'}},
         {'name': 'id',
-        'value': 'http://testing.example.com'},
+         'value': 'http://testing.example.com'},
         {'name': 'updated',
-        'value': '2015-06-17T00:00:00-06:00'}]
+         'value': '2015-06-17T00:00:00-06:00'}]
 
     entry = {
             'title': 'test-entry',
