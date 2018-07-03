@@ -1,16 +1,36 @@
 import logging
+import textwrap
 import unittest
 from unittest import mock
+
+import pytest
 
 from wintersun import wintersun
 
 logging.disable(logging.INFO)
 
 
+dummy_config = {
+        'target_dir': 'some_dir',
+        'tag_dir': 'tag_dir',
+        'delete_target_dir': False,
+        'static_dir': 'static_dir',
+        'author': 'Matt',
+        'site_url': 'http://example.com',
+        'template_dir': 'template_dir',
+        'excluded_dirs': ['ex_dir1', 'ex_dir2']
+    }
+
+
+@pytest.fixture
+def conf():
+    return dummy_config
+
+
 class TestWintersun(unittest.TestCase):
 
     def setUp(self):
-        pass
+        self.config = dummy_config.copy()
 
     def test_get_markdown_files(self):
         markdown_files = list(wintersun.get_markdown_files(
@@ -84,12 +104,14 @@ class TestWintersun(unittest.TestCase):
             'file2.md',
         )
         mock_get_or_create.side_effect = [
-            (None, {'title': 'title1',
-             'date': '2015-09-22 20:00:00',
-             'tags': ['none']}),
-            (None, {'title': 'title2',
-             'date': '2015-08-22 20:00:00',
-             'tags': ['none']})
+            (None, {
+                'title': 'title1',
+                'date': '2015-09-22 20:00:00',
+                'tags': ['none']}),
+            (None, {
+                'title': 'title2',
+                'date': '2015-08-22 20:00:00',
+                'tags': ['none']})
         ]
 
         sorted_filenames = wintersun.filenames_by_date('./posts')
@@ -99,9 +121,10 @@ class TestWintersun(unittest.TestCase):
     def test_generate_entry_link(self):
         file_name = 'file1'
         path = './wintersun/posts'
-        link = wintersun.generate_entry_link(file_name, path)
-        self.assertEqual(link,
-                         wintersun.SITE_URL + '/wintersun/posts/file1.html')
+        with mock.patch.object(wintersun, 'CONFIG', self.config):
+            link = wintersun.generate_entry_link(file_name, path)
+        self.assertEqual(
+            link, self.config['site_url'] + '/wintersun/posts/file1.html')
 
     def test_generate_atom_entry_dict(self):
         meta = {'title': 'title1',
@@ -110,16 +133,17 @@ class TestWintersun(unittest.TestCase):
                 'path': './wintersun/posts'}
         contents = 'Lorem ipsum ' * 25
         expected_result = {
-            u'title': meta['title'],
-            u'link': wintersun.SITE_URL + '/wintersun/posts/file1.html',
-            u'published': '2015-09-22T00:00:00+01:00',
-            u'updated': '2015-09-22T00:00:00+01:00',
-            u'name': u'Matt',
-            u'content': contents[:100] + '...'}
+            'title': meta['title'],
+            'link': self.config['site_url'] + '/wintersun/posts/file1.html',
+            'published': '2015-09-22T00:00:00+01:00',
+            'updated': '2015-09-22T00:00:00+01:00',
+            'name': 'Matt',
+            'content': contents[:100] + '...'}
 
-        entry = wintersun.generate_atom_entry_dict(contents, meta)
+        with mock.patch.object(wintersun, 'CONFIG', self.config):
+            entry = wintersun.generate_atom_entry_dict(contents, meta)
 
-        self.assertEqual(entry, expected_result)
+            self.assertEqual(entry, expected_result)
 
     @mock.patch('wintersun.wintersun.os_path.join')
     def test_build_path(self, mock_os_path):
@@ -128,13 +152,15 @@ class TestWintersun(unittest.TestCase):
 
     def test_write_output_file(self):
         with mock.patch('builtins.open', mock.mock_open()) as mock_open:
-            target_dir = wintersun.TARGET_DIR = 'target'
+            target_dir = self.config['target_dir'] = 'target'
             meta = {'path': 'wintersun/posts', 'filename': 'file1'}
 
-            wintersun.write_output_file('', meta)
-            mock_open.assert_called_with(target_dir + '/' + meta['path'] + '/' +
-                                         'file1.html', mode='w')
-            self.assertTrue(mock_open().__enter__().write.called)
+            with mock.patch.object(wintersun, 'CONFIG', self.config):
+                wintersun.write_output_file('', meta)
+                mock_open.assert_called_with(
+                    target_dir + '/' + meta['path'] + '/' + 'file1.html',
+                    mode='w')
+                self.assertTrue(mock_open().__enter__().write.called)
 
     @mock.patch('wintersun.wintersun.env')
     def test_render_template_post(self, mock_env):
@@ -173,17 +199,20 @@ class TestWintersun(unittest.TestCase):
     def test_transform_next_dir_level_excluded_dirs(self, mock_build_tree):
         path = 'wintersun/posts'
 
-        wintersun.transform_next_dir_level(path, wintersun.EXCLUDED_DIRS)
-        self.assertFalse(mock_build_tree.called)
+        with mock.patch.object(wintersun, 'CONFIG', self.config):
+            wintersun.transform_next_dir_level(path,
+                                               self.config['excluded_dirs'])
+            self.assertFalse(mock_build_tree.called)
 
     @mock.patch('wintersun.wintersun.os.mkdir')
     @mock.patch('wintersun.wintersun.build_tree')
     def test_transform_next_dir_level(self, mock_build_tree, mock_mkdir):
         path = 'wintersun/posts'
         directories = ['dir1', 'dir2']
-        expected_path = wintersun.TARGET_DIR = '/' + path
+        expected_path = self.config['target_dir'] = '/' + path
 
-        wintersun.transform_next_dir_level(path, directories)
+        with mock.patch.object(wintersun, 'CONFIG', self.config):
+            wintersun.transform_next_dir_level(path, directories)
 
         mock_mkdir.assert_has_calls([mock.call(expected_path + '/dir1'),
                                      mock.call(expected_path + '/dir2')])
@@ -211,19 +240,19 @@ class TestWintersun(unittest.TestCase):
     @mock.patch('wintersun.wintersun.os.mkdir')
     @mock.patch('wintersun.wintersun.os_path')
     @mock.patch('wintersun.wintersun.rmtree')
-    @mock.patch('wintersun.wintersun.ARGS')
-    def test_prepare_target_dir_target_dir_exists(self, mock_ARGS, mock_rmtree,
+    def test_prepare_target_dir_target_dir_exists(self, mock_rmtree,
                                                   mock_os_path, mock_mkdir,
                                                   mock_copytree):
-        mock_os_path.exists.return_value = True
-        mock_os_path.isdir.return_value = True
-        mock_ARGS.delete = mock.PropertyMock(return_value=True)
+        with mock.patch.object(wintersun, 'CONFIG', self.config) as conf:
+            mock_os_path.exists.return_value = True
+            mock_os_path.isdir.return_value = True
+            conf['delete_target_dir'] = True
 
-        wintersun.prepare_target_dir()
+            wintersun.prepare_target_dir()
 
-        self.assertTrue(mock_rmtree.called)
-        self.assertTrue(mock_mkdir.called)
-        self.assertTrue(mock_copytree.called)
+            self.assertTrue(mock_rmtree.called)
+            self.assertTrue(mock_mkdir.called)
+            self.assertTrue(mock_copytree.called)
 
     @mock.patch('wintersun.wintersun.copytree')
     @mock.patch('wintersun.wintersun.os.mkdir')
@@ -232,12 +261,13 @@ class TestWintersun(unittest.TestCase):
                                                       mock_os_path,
                                                       mock_mkdir,
                                                       mock_copytree):
-        mock_os_path.exists.return_value = False
+        with mock.patch.object(wintersun, 'CONFIG', self.config) as conf:
+            mock_os_path.exists.return_value = False
 
-        wintersun.prepare_target_dir()
+            wintersun.prepare_target_dir()
 
-        self.assertTrue(mock_mkdir.called)
-        self.assertTrue(mock_copytree.called)
+            self.assertTrue(mock_mkdir.called)
+            self.assertTrue(mock_copytree.called)
 
     @mock.patch('wintersun.wintersun.filter_items_from_path')
     def test_get_files_and_directories_from(self, mock_filter_items):
@@ -251,6 +281,37 @@ class TestWintersun(unittest.TestCase):
         self.assertEqual(mock_filter_items.call_count, 2)
         self.assertEqual(d, ['dir1', 'dir2'])
         self.assertEqual(list(f), ['file1.md', 'file2.md'])
+
+
+@pytest.fixture
+def mock_config(tmpdir):
+    config = tmpdir.join('mock_manifest.ini')
+    config.write(textwrap.dedent(
+    """ [DEFAULT]
+        site_url = http://example.com
+        template_dir = templates
+        static_dir = static
+        target_dir = site
+        tag_dir = tags
+        excluded_dirs = media,.git
+        feed_title = example.com
+        log_level = info"""))
+    return config
+
+
+def test_get_config_file(mock_config):
+    cfg = wintersun.get_config(mock_config.strpath)
+    expected = {
+        'site_url': 'http://example.com',
+        'template_dir': 'templates',
+        'static_dir': 'static',
+        'target_dir': 'site',
+        'tag_dir': 'tags',
+        'excluded_dirs': ['media', '.git'],
+        'feed_title': 'example.com',
+        'log_level': 'info'
+    }
+    assert cfg == expected
 
 
 if __name__ == '__main__':
