@@ -289,18 +289,23 @@ def create_rss_feed(config, items):
         f.write(feed.generate_xml())
 
 
-if __name__ == '__main__':
+def main():
+    global CONFIG
     # add setup py
     parser = argparse.ArgumentParser()
     parser.add_argument('manifest', help='INI file containing blog config')
-    parser.add_argument('-d', '--delete',
-                        help=("Remove target output directory before "
-                              "generating. Default: {}").format(
-                                  CONFIG['target_dir']),
-                        action='store_true')
-    parser.add_argument('-t', '--target',
-                        help=("Change target output directory."
-                              "Default: {}").format(CONFIG['target_dir']))
+    parser.add_argument(
+        '-d',
+        '--delete',
+        default=False,
+        help=("Remove target output directory before "
+              "generating. Default: {}").format(False),
+        action='store_true')
+    parser.add_argument(
+        '-t',
+        '--target',
+        help=("Change target output directory."
+              "Default: {}").format('site'))
 
     args = parser.parse_args()
     CONFIG = get_config(args.manifest)
