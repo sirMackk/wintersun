@@ -18,6 +18,7 @@ dummy_config = {
         'author': 'Matt',
         'site_url': 'http://example.com',
         'template_dir': 'template_dir',
+        'template_env': mock.Mock(),
         'excluded_dirs': ['ex_dir1', 'ex_dir2']
     }
 
@@ -162,29 +163,30 @@ class TestWintersun(unittest.TestCase):
                     mode='w')
                 self.assertTrue(mock_open().__enter__().write.called)
 
-    @mock.patch('wintersun.wintersun.env')
-    def test_render_template_post(self, mock_env):
+    def test_render_template_post(self):
         mock_template = mock.Mock()
-        mock_env.get_template.return_value = mock_template
+
 
         meta = {'title': 'title', 'template': 'Post',
                 'filename': 'file1.md', 'path': 'wintersun/posts'}
         contents = 'Lorem ipsum ' * 100
 
-        wintersun.render_template(contents, meta)
-        mock_env.get_template.assert_called_with('post.html')
-        self.assertTrue(mock_template.render.called)
+        with mock.patch.object(wintersun, 'CONFIG', self.config) as conf:
+            conf['template_env'].get_template.return_value = mock_template
+            wintersun.render_template(contents, meta)
+            conf['template_env'].get_template.assert_called_with('post.html')
+            self.assertTrue(mock_template.render.called)
 
-    @mock.patch('wintersun.wintersun.env')
     @mock.patch('wintersun.wintersun.generate_post_index')
-    def test_render_template_index(self, mock_gen_post_index, mock_env):
+    def test_render_template_index(self, mock_gen_post_index):
         mock_gen_post_index.return_value = (1, 2,)
         meta = {'title': 'title', 'template': u'Index',
                 'filename': 'file1.md', 'path': 'wintersun/posts'}
         contents = 'Lorem ipsum ' * 100
 
-        wintersun.render_template(contents, meta)
-        self.assertTrue(mock_gen_post_index.called)
+        with mock.patch.object(wintersun, 'CONFIG', self.config) as conf:
+            wintersun.render_template(contents, meta)
+            self.assertTrue(mock_gen_post_index.called)
 
     @mock.patch('wintersun.wintersun.build_tree')
     def test_transform_next_dir_level_no_directories(self, mock_build_tree):
@@ -209,13 +211,14 @@ class TestWintersun(unittest.TestCase):
     def test_transform_next_dir_level(self, mock_build_tree, mock_mkdir):
         path = 'wintersun/posts'
         directories = ['dir1', 'dir2']
-        expected_path = self.config['target_dir'] = '/' + path
+        # expected_path = self.config['target_dir'] = '/' + path
+        expected_path = self.config['target_dir'] + '/' + path
 
         with mock.patch.object(wintersun, 'CONFIG', self.config):
             wintersun.transform_next_dir_level(path, directories)
 
-        mock_mkdir.assert_has_calls([mock.call(expected_path + '/dir1'),
-                                     mock.call(expected_path + '/dir2')])
+        mock_mkdir.assert_has_calls([mock.call(expected_path + '/dir1', 0o755),
+                                     mock.call(expected_path + '/dir2', 0o755)])
         self.assertTrue(mock_build_tree.called)
 
     @mock.patch('builtins.open')
@@ -299,7 +302,8 @@ def mock_config(tmpdir):
     return config
 
 
-def test_get_config_file(mock_config):
+def test_get_config_file(mocker, mock_config):
+    mocker.patch.object(wintersun, 'get_template_env', return_value='env')
     cfg = wintersun.get_config(mock_config.strpath)
     expected = {
         'site_url': 'http://example.com',
@@ -309,7 +313,8 @@ def test_get_config_file(mock_config):
         'tag_dir': 'tags',
         'excluded_dirs': ['media', '.git'],
         'feed_title': 'example.com',
-        'log_level': 'info'
+        'log_level': 'info',
+        'template_env': 'env'
     }
     assert cfg == expected
 
