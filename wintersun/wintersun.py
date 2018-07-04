@@ -56,7 +56,7 @@ def build_tree(path):
     directories, input_files = get_files_and_directories_from(path)
 
     for md_file in input_files:
-        logger.info(u'input file: %s', md_file)
+        logger.info('input file: %s', md_file)
         transform_into_output(md_file, path)
 
     transform_next_dir_level(path, directories)
@@ -90,7 +90,7 @@ def is_template(template_type, meta):
 
 
 def render_template(contents, meta):
-    logger.info(u'template meta title: %s', meta['title'])
+    logger.info('template meta title: %s', meta['title'])
     template = get_template(meta['template'])
     if is_template('index', meta) or is_template('main', meta):
         meta['indexed'], meta['indexed_dir'] = generate_post_index(meta)
@@ -108,7 +108,7 @@ def write_output_file(contents, meta):
     path = meta['path']
     out_filename = standardize_filename(meta['filename'].strip()) + '.html'
 
-    logger.info(u'creating file: %s',
+    logger.info('creating file: %s',
                 out_filename)
 
     output_destination_path = os_path.join(
@@ -230,17 +230,17 @@ def generate_tag_index(tag, items):
 def build_tags(items):
     tags = defaultdict(list)
     for _, meta in items:
-        for tag in meta[u'tags'].split():
+        for tag in meta['tags'].split():
             tags[tag].append({
-                'title': meta[u'title'],
-                'link':  generate_entry_link(meta[u'filename'], meta[u'path']),
-                'date': meta[u'date']
+                'title': meta['title'],
+                'link':  generate_entry_link(meta['filename'], meta['path']),
+                'date': meta['date']
             })
 
-    for tag, items in tags.iteritems():
+    for tag, items in tags.items():
         generate_tag_index(
             tag,
-            sorted(items, key=lambda item: item[u'date'], reverse=True))
+            sorted(items, key=lambda item: item['date'], reverse=True))
 
 
 def prepare_target_dir():

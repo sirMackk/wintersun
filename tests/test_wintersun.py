@@ -294,15 +294,15 @@ class TestWintersun(unittest.TestCase):
 def mock_config(tmpdir):
     config = tmpdir.join('mock_manifest.ini')
     config.write(textwrap.dedent(
-    """ [DEFAULT]
-        site_url = http://example.com
-        template_dir = templates
-        static_dir = static
-        target_dir = site
-        tag_dir = tags
-        excluded_dirs = media,.git
-        feed_title = example.com
-        log_level = info"""))
+        """[DEFAULT]
+           site_url = http://example.com
+           template_dir = templates
+           static_dir = static
+           target_dir = site
+           tag_dir = tags
+           excluded_dirs = media,.git
+           feed_title = example.com
+           log_level = info"""))
     return config
 
 
