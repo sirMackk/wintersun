@@ -160,7 +160,8 @@ class TestWintersun(unittest.TestCase):
                 wintersun.write_output_file('', meta)
                 mock_open.assert_called_with(
                     target_dir + '/' + meta['path'] + '/' + 'file1.html',
-                    mode='wb')
+                    mode='w',
+                    encoding=wintersun.OUTPUT_ENCODING)
                 self.assertTrue(mock_open().__enter__().write.called)
 
     def test_render_template_post(self):
