@@ -160,12 +160,11 @@ class TestWintersun(unittest.TestCase):
                 wintersun.write_output_file('', meta)
                 mock_open.assert_called_with(
                     target_dir + '/' + meta['path'] + '/' + 'file1.html',
-                    mode='w')
+                    mode='wb')
                 self.assertTrue(mock_open().__enter__().write.called)
 
     def test_render_template_post(self):
         mock_template = mock.Mock()
-
 
         meta = {'title': 'title', 'template': 'Post',
                 'filename': 'file1.md', 'path': 'wintersun/posts'}
@@ -197,13 +196,18 @@ class TestWintersun(unittest.TestCase):
 
         self.assertFalse(mock_build_tree.called)
 
+    @mock.patch('wintersun.wintersun.os.mkdir')
     @mock.patch('wintersun.wintersun.build_tree')
-    def test_transform_next_dir_level_excluded_dirs(self, mock_build_tree):
-        path = 'wintersun/posts'
+    def test_transform_next_dir_level_excluded_dirs(self, mock_build_tree,
+                                                    mock_mkdir):
+        path = './'
+        rel_excluded_dirs = [
+            path + directory for directory in self.config['excluded_dirs']
+        ]
 
         with mock.patch.object(wintersun, 'CONFIG', self.config):
             wintersun.transform_next_dir_level(path,
-                                               self.config['excluded_dirs'])
+                                               rel_excluded_dirs)
             self.assertFalse(mock_build_tree.called)
 
     @mock.patch('wintersun.wintersun.os.mkdir')
