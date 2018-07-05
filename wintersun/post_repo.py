@@ -1,6 +1,6 @@
-
 import re
 from collections import namedtuple
+from datetime import datetime
 
 PostItem = namedtuple('PostItem', 'title, contents, template, date, tags')
 
@@ -11,6 +11,10 @@ class PostRepoException(Exception):
 
 
 class NotFound(PostRepoException):
+    pass
+
+
+class DuplicatePost(PostRepoException):
     pass
 
 
@@ -25,17 +29,30 @@ class InMemPostRepo:
         raise NotFound(f'Post "{title}" not found')
 
     def all(self, order='desc'):
-        pass
+        if order not in ('asc', 'desc'):
+            raise PostRepoException(f'Invalid sorting order: "{order}"')
+        reverse = order == 'desc'
+        ordered_posts = sorted(
+            self.posts,
+            key=lambda post: self._to_dt(post.date),
+            reverse=reverse)
+        return ordered_posts
 
     def insert(self, title, contents, template, date=None, tags=None):
-        self.posts.append(
-            PostItem(title, contents, template, date, tags))
+        try:
+            existing = self.get(title)
+            raise DuplicatePost(
+                f'Post titled "{title}" from "{existing.date}" already exists, '
+                f'cannot insert post dated "{date}"')
+        except NotFound:
+            self.posts.append(
+                PostItem(title, contents, template, date, tags))
 
-    def insert_from_file(self, fpath):
-        pass
+    def _to_dt(self, dt_str):
+        return datetime.strptime(dt_str, '%Y-%m-%d %H:%M:%S')
 
-    def read_from_path(self, root):
-        pass
+    def __len__(self):
+        return len(self.posts)
 
 
 class MdFileFinder:
