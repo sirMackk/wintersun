@@ -2,19 +2,19 @@
 import re
 from collections import namedtuple
 
-PostItem = namedtuple('PostItem', 'title, contents, date, tags')
+PostItem = namedtuple('PostItem', 'title, contents, template, date, tags')
 
 
 # inherit from wintersunexc
-class MdPostDbException(Exception):
+class PostRepoException(Exception):
     pass
 
 
-class NotFound(MdPostDbException):
+class NotFound(PostRepoException):
     pass
 
 
-class MdPostDb:
+class InMemPostRepo:
     def __init__(self):
         self.posts = []
 
@@ -27,9 +27,9 @@ class MdPostDb:
     def all(self, order='desc'):
         pass
 
-    def insert(self, title, contents, date=None, tags=None):
+    def insert(self, title, contents, template, date=None, tags=None):
         self.posts.append(
-            PostItem(title, contents, date, tags))
+            PostItem(title, contents, template, date, tags))
 
     def insert_from_file(self, fpath):
         pass
