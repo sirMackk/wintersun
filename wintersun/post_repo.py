@@ -1,4 +1,3 @@
-import re
 from collections import namedtuple
 from datetime import datetime
 
@@ -38,7 +37,7 @@ class InMemPostRepo:
             reverse=reverse)
         return ordered_posts
 
-    def insert(self, title, contents, template, date=None, tags=None):
+    def insert(self, title, contents, template, date, tags=None):
         try:
             existing = self.get(title)
             raise DuplicatePost(
@@ -53,11 +52,3 @@ class InMemPostRepo:
 
     def __len__(self):
         return len(self.posts)
-
-
-class MdFileFinder:
-    MARKDOWN_FILTER = re.compile(r'([a-zA-Z0-9_-]+)\.md')
-
-    @staticmethod
-    def find(root):
-        pass
