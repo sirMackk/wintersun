@@ -35,26 +35,6 @@ def md_contents(dict_contents):
 
 
 class TestMdFileReader:
-    def test_find_lists_all_files(self, tmpdir):
-        posts = tmpdir.mkdir('posts')
-        guides = tmpdir.mkdir('guides')
-        p1 = posts.join('post1.md')
-        p2 = posts.join('post2.md')
-        p1.write('post1')
-        p2.write('post1')
-        g1 = guides.join('guide1.md')
-        g1.write('guide1')
-
-        file_paths = post_reader.MdFileReader.find(tmpdir.strpath)
-
-        assert len(file_paths) == 3
-        for path in file_paths:
-            assert path.is_file()
-        file_names = sorted([f.name for f in file_paths])
-        assert file_names == ['guide1.md', 'post1.md', 'post2.md']
-        parent_paths = sorted([f.parent.name for f in file_paths])
-        assert parent_paths == ['guides', 'posts', 'posts']
-
     @pytest.mark.integration
     def test_read_from_root_returns_posts(self, tmpdir, md_contents,
                                           dict_contents):
@@ -67,8 +47,6 @@ class TestMdFileReader:
         p2 = posts.join('post2.md')
         p2.write(md_contents)
 
-        post1, post2 = post_reader.MdFileReader.read_from_root(tmpdir.strpath)
+        post1, post2 = post_reader.MdFileReader.read(tmpdir.strpath)
 
         assert post1 == dict_contents
-
-    # add unit test that uses a mock that tests correct attributes
