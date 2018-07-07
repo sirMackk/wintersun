@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import markdown2
@@ -5,6 +6,7 @@ import markdown2
 
 class MdFileReader:
     MD_GLOB = '**/*.md'
+    TEMPLATED_FILENAME_FILTER = re.compile(r'[^a-z^A-Z^0-9-]')
 
     @classmethod
     def read(cls, root):
@@ -21,6 +23,7 @@ class MdFileReader:
                 'date': html.metadata['Date'],
                 'template': html.metadata['Template'],
                 'tags': html.metadata['Tags'].split(' '),
+                'standardized_name': cls._standardize_filename(md_file_path),
                 'contents': str(html)})
         return md_posts
 
@@ -28,3 +31,7 @@ class MdFileReader:
     def _find(cls, root):
         root = Path(root)
         return list(root.glob(cls.MD_GLOB))
+
+    @classmethod
+    def _standardize_filename(cls, filename):
+        return cls.TEMPLATED_FILENAME_FILTER.sub('-', filename.stem)

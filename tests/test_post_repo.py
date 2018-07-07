@@ -1,6 +1,6 @@
 import pytest
 
-from wintersun import post_repo
+from wintersun import post_item, post_repo
 
 
 @pytest.fixture
@@ -8,6 +8,7 @@ def example_post_dict():
     return {
         'title': 'Test Post',
         'template': 'Post',
+        'standardized_name': 'test-post',
         'contents': 'A bunch of contents\nMany pages',
         'date': '2014-12-31 01:16:13',
         'tags': ['python', 'software']
@@ -23,7 +24,7 @@ def inmem_repo(example_post_dict):
 
 class TestInMemPostRepo:
     def test_insert_adds_postitem(self, example_post_dict, inmem_repo):
-        expected_post = post_repo.PostItem(**example_post_dict)
+        expected_post = post_item.PostItem(**example_post_dict)
 
         assert len(inmem_repo.posts) == 1
         inmem_repo.posts[0] == expected_post

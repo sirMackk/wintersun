@@ -1,7 +1,6 @@
-from collections import namedtuple
 from datetime import datetime
 
-PostItem = namedtuple('PostItem', 'title, contents, template, date, tags')
+from wintersun import post_item
 
 
 # inherit from wintersunexc
@@ -37,7 +36,13 @@ class InMemPostRepo:
             reverse=reverse)
         return ordered_posts
 
-    def insert(self, title, contents, template, date, tags=None):
+    def insert(self,
+               title,
+               contents,
+               standardized_name,
+               template,
+               date,
+               tags=None):
         try:
             existing = self.get(title)
             raise DuplicatePost(
@@ -45,7 +50,8 @@ class InMemPostRepo:
                 f'cannot insert post dated "{date}"')
         except NotFound:
             self.posts.append(
-                PostItem(title, contents, template, date, tags))
+                post_item.PostItem(title, contents, standardized_name,
+                                   template, date, tags))
 
     def _to_dt(self, dt_str):
         return datetime.strptime(dt_str, '%Y-%m-%d %H:%M:%S')

@@ -9,6 +9,7 @@ def dict_contents():
         'title': 'Test Post',
         'date': '2014-12-31 01:16:13',
         'template': 'Post',
+        'standardized_name': 'post1-about---things',
         'tags': ['tag1', 'tag2'],
         'contents': ('<p>Lorem ipsum dolor sit amet, consectetur adipiscing '
                      'elit. Praesent ultrices sit amet purus nec sollicitudin.'
@@ -39,7 +40,7 @@ class TestMdFileReader:
     def test_read_from_root_returns_posts(self, tmpdir, md_contents,
                                           dict_contents):
         posts = tmpdir.mkdir('posts')
-        p1 = posts.join('post1.md')
+        p1 = posts.join('post1_about_@_things.md')
         p1.write(md_contents)
         md_contents = md_contents.replace('Test Post', 'Test Post 2')
         md_contents = md_contents.replace('2014-12-31', '2015-01-31')
@@ -47,6 +48,10 @@ class TestMdFileReader:
         p2 = posts.join('post2.md')
         p2.write(md_contents)
 
-        post1, post2 = post_reader.MdFileReader.read(tmpdir.strpath)
+        posts = post_reader.MdFileReader.read(tmpdir.strpath)
+        if posts[0]['title'] == 'Test Post':
+            post = posts[0]
+        else:
+            post = posts[1]
 
-        assert post1 == dict_contents
+        assert post == dict_contents
