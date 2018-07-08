@@ -7,41 +7,25 @@ from atom_generator import Feed
 
 
 class AtomPresenter:
-    def __init__(self, config):
-        self.config = config
+    def __init__(self, feed_title, site_url, post_dir, author, encoding):
+        self.feed_title = feed_title
+        self.site_url = site_url
+        self.post_dir = post_dir
+        self.author = author
+        self.encoding = encoding
 
     def output(self, posts, target='./feed'):
         target_path = Path(target)
-        # maybe this dict should be offloaded to the Feed object?
-        feed = Feed([
-            {'name': 'title',
-             'value': self.config['feed_title']},
-            {'name': 'link',
-                'attributes': {
-                    'rel': 'self',
-                    'href': self.config['site_url'] + '/'}},
-            {'name': 'link',
-                'attributes': {
-                    'rel': 'alternate',
-                    'href': self.config['site_url']}},
-            {'name': 'id',
-                'value': self.config['site_url'] + '/'},
-            {'name': 'updated',
-                'value': self._create_timestamp()}])
-        with open(target_path, 'w', encoding=self.config['encoding']) as f:
+        feed = Feed(self.feed_title, self.site_url,
+                    self._create_timestamp())
+        with open(target_path, 'w', encoding=self.encoding) as f:
             for post in posts:
-                if self._is_template('post', post):
+                if post.template == 'Post':
                     feed.add_entry(
                         self._generate_atom_entry_dict(post))
             f.write(feed.generate_xml())
 
-    def _is_template(self, template_type, post):
-        # is this required at all?
-        return post.template == template_type.capitalize()
-
     def _create_timestamp(self, date=None):
-        # rfc3339 timestamp
-        # is this important?
         if date:
             return date + 'T00:00:00+01:00'
         else:
@@ -50,12 +34,8 @@ class AtomPresenter:
                 "%Y-%m-%dT%H:%M:%S+01:00")
 
     def _generate_entry_link(self, post):
-        # too much dependency on config?
-        # extract stuff like site_url and post_dir into object ins. args?
-        return '/'.join([
-            self.config['site_url'],
-            self.config['post_dir'],
-            post.standardized_name + '.html'])
+        return '/'.join(
+            [self.site_url, self.post_dir, post.standardized_name + '.html'])
 
     def _generate_atom_entry_dict(self, post):
         entry = {
@@ -63,6 +43,6 @@ class AtomPresenter:
             'link': self._generate_entry_link(post),
             'published': self._create_timestamp(post.date),
             'updated': self._create_timestamp(post.date),
-            'name': self.config['author'],
+            'name': self.author,
             'content': post.contents[:100] + '...'}
         return entry

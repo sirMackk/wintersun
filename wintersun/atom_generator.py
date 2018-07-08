@@ -1,25 +1,30 @@
-from datetime import datetime
 from xml.dom.minidom import Document
 
-import pytz
 
-
-def create_timestamp(date=None):
-    if date:
-        return date + 'T00:00:00+01:00'
-    else:
-        localtz = pytz.timezone("Europe/Berlin")
-        return datetime.now().replace(tzinfo=localtz).strftime(
-            "%Y-%m-%dT%H:%M:%S+01:00")
-
-
-class Feed(object):
-    # add entry should add item to list,
-    # then sort by something before generating xml
-    def __init__(self, settings):
+class Feed:
+    def __init__(self, feed_title, site_url, ts):
+        self.doc = None
+        self.feed = None
         self.entry_data = []
-        self.settings = settings
+        self.settings = self._build_settings_list(feed_title, site_url, ts)
         self.create_feed()
+
+    def _build_settings_list(self, title, url, timestamp):
+        return [
+            {'name': 'title',
+             'value': title},
+            {'name': 'link',
+                'attributes': {
+                    'rel': 'self',
+                    'href': url + '/'}},
+            {'name': 'link',
+                'attributes': {
+                    'rel': 'alternate',
+                    'href': url}},
+            {'name': 'id',
+                'value': url + '/'},
+            {'name': 'updated',
+                'value': timestamp}]
 
     def create_header_nodes(self, doc):
         for setting in self.settings:
@@ -35,6 +40,7 @@ class Feed(object):
             yield el
 
     def create_feed(self):
+        """Creates Atom root element; Creates feed element"""
         doc = Document()
         feed = doc.createElement('feed')
         feed.setAttribute('xmlns', 'http://www.w3.org/2005/Atom')
