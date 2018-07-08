@@ -2,6 +2,7 @@ from datetime import datetime
 from pathlib import Path
 
 import pytz
+from jinja2 import Environment, FileSystemLoader
 
 from wintersun import atom_generator
 
@@ -50,3 +51,38 @@ class AtomPresenter:
             'name': self.author,
             'content': post.contents[:100] + '...'}
         return entry
+
+
+class HTMLPresenter:
+    def __init__(self, template_dir):
+        self.template_dir = template_dir
+
+    def output(self, pages, target_dir):
+        # integration test?
+        template_env = Environment(
+            loader=FileSystemLoader(self.template_dir.strpath))
+
+        self._write_index(pages, target_dir, template_env)
+        self._write_pages(pages, target_dir, template_env)
+
+    def _write_index(self, pages, target_dir, template_env):
+        # different indexes for different page categories?
+        template = template_env.get_template('index.html')
+        index_fpath = target_dir.absolute().parent / (target_dir.stem + '.html')
+        with open(index_fpath, 'w') as f:
+            f.write(template.render(pages=pages))
+
+    def _write_pages(self, pages, target_dir, template_env):
+        target_dir.mkdir(mode=0o755)
+        for page in pages:
+            template_name = page.template.lower() + '.html'
+            template = template_env.get_template(template_name)
+            page_fpath = target_dir / (page.standardized_name + '.html')
+            page_contents = {
+                'title': page.title,
+                'date': page.date,
+                'contents': page.contents
+            }
+
+            with open(page_fpath, 'w') as f:
+                f.write(template.render(**page_contents))
