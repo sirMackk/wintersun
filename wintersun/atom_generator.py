@@ -102,4 +102,4 @@ class Feed:
         for entry in self.entry_data[:mAx]:
             self.generate_entry(entry)
 
-        return self.doc.toprettyxml()
+        return self.doc.toprettyxml(indent='    ')

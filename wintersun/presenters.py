@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytz
 
-from atom_generator import Feed
+from wintersun import atom_generator
 
 
 class AtomPresenter:
@@ -15,9 +15,13 @@ class AtomPresenter:
         self.encoding = encoding
 
     def output(self, posts, target='./feed'):
+        """
+        :param posts: List of PostItem-like objects.
+        :param target: Target Atom feed file path.
+        """
         target_path = Path(target)
-        feed = Feed(self.feed_title, self.site_url,
-                    self._create_timestamp())
+        feed = atom_generator.Feed(self.feed_title, self.site_url,
+                                   self._rfc3339_ts_now())
         with open(target_path, 'w', encoding=self.encoding) as f:
             for post in posts:
                 if post.template == 'Post':
@@ -25,13 +29,13 @@ class AtomPresenter:
                         self._generate_atom_entry_dict(post))
             f.write(feed.generate_xml())
 
-    def _create_timestamp(self, date=None):
-        if date:
-            return date + 'T00:00:00+01:00'
-        else:
-            localtz = pytz.timezone("America/New_York")
-            return datetime.now().replace(tzinfo=localtz).strftime(
-                "%Y-%m-%dT%H:%M:%S+01:00")
+    def _rfc3339_suffix(self, date):
+        return date + 'T00:00:00-05:00'
+
+    def _rfc3339_ts_now(self):
+        localtz = pytz.timezone("America/New_York")
+        return datetime.now().replace(tzinfo=localtz).strftime(
+            "%Y-%m-%dT%H:%M:%S-05:00")
 
     def _generate_entry_link(self, post):
         return '/'.join(
@@ -41,8 +45,8 @@ class AtomPresenter:
         entry = {
             'title': post.title,
             'link': self._generate_entry_link(post),
-            'published': self._create_timestamp(post.date),
-            'updated': self._create_timestamp(post.date),
+            'published': self._rfc3339_suffix(post.date),
+            'updated': self._rfc3339_suffix(post.date),
             'name': self.author,
             'content': post.contents[:100] + '...'}
         return entry
