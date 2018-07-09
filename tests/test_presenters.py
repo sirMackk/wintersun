@@ -1,13 +1,8 @@
-from collections import namedtuple
 from pathlib import Path
 
 import pytest
 
-from wintersun import exceptions, presenters
-
-
-Post = namedtuple('Post',
-                  'title, standardized_name, template, date, contents, tags')
+from wintersun import exceptions, post_item, presenters
 
 
 @pytest.fixture
@@ -23,8 +18,8 @@ def atom_presenter_kwargs():
 
 @pytest.fixture
 def post():
-    return Post('Post-Title', 'post-title', 'Post', '2018-01-01',
-                'Lorem ipsum', ['programming'])
+    return post_item.PostItem('Post-Title', 'Lorem ipsum', 'post-title',
+                              'Post', '2018-01-01', ['programming'])
 
 
 @pytest.fixture
