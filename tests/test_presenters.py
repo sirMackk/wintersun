@@ -25,21 +25,13 @@ def post():
     return Post('Post-Title', 'post-title', 'Post', '2018-01-01', 'Lorem ipsum')
 
 
-@pytest.fixture()
-def template_dir(tmpdir):
-    template_dir = tmpdir.mkdir('templates')
-    index_template = template_dir.join('index.html')
-    post_template = template_dir.join('post.html')
-
-    index_template.write('<h1>Index</h1>'
-                         '{% for page in pages %}'
-                         '{{ page.title }}'
-                         '{% endfor %}')
-
-    post_template.write('<h1>{{ title }}</h1>'
-                        '<h2>{{ date }}</h2>'
-                        '{{ contents }}')
-    return template_dir
+@pytest.fixture
+def mock_renderer(mocker):
+    def _echo(*args, **kwargs):
+        return f'{args} - {kwargs}'
+    renderer = mocker.Mock()
+    renderer.render.side_effect = _echo
+    return renderer
 
 
 class TestAtomPresenter:
@@ -117,10 +109,10 @@ class TestAtomPresenter:
 
 
 class TestHTMLPresenter:
-    def test_outputs_index_file(self, tmpdir, post, template_dir):
+    def test_outputs_index_file(self, tmpdir, post, mock_renderer):
         container_dir = tmpdir.mkdir('test')
         target_dir = Path(container_dir, 'posts')
-        presenter = presenters.HTMLPresenter(template_dir)
+        presenter = presenters.HTMLPresenter(mock_renderer)
 
         presenter.output([post], target_dir)
 
@@ -129,10 +121,10 @@ class TestHTMLPresenter:
         with open(index_fpath, 'r') as f:
             assert post.title in f.read()
 
-    def test_outputs_post_files(self, tmpdir, post, template_dir):
+    def test_outputs_post_files(self, tmpdir, post, mock_renderer):
         container_dir = tmpdir.mkdir('test')
         target_dir = Path(container_dir, 'posts')
-        presenter = presenters.HTMLPresenter(template_dir)
+        presenter = presenters.HTMLPresenter(mock_renderer)
 
         presenter.output([post], target_dir)
 
@@ -147,10 +139,10 @@ class TestHTMLPresenter:
             assert post.date in contents
             assert post.contents in contents
 
-    def test_outputs_multiple_files(self, tmpdir, post, template_dir):
+    def test_outputs_multiple_files(self, tmpdir, post, mock_renderer):
         container_dir = tmpdir.mkdir('test')
         target_dir = Path(container_dir, 'posts')
-        presenter = presenters.HTMLPresenter(template_dir)
+        presenter = presenters.HTMLPresenter(mock_renderer)
         post2 = post._replace(
             title='Second post', standardized_name='second-post')
         post3 = post._replace(
