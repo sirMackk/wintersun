@@ -1,9 +1,10 @@
+from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 
 import pytz
 
-from wintersun import atom_generator
+from wintersun import atom_generator, exceptions
 
 
 class AtomPresenter:
@@ -78,3 +79,31 @@ class HTMLPresenter:
             }
             with open(page_fpath, 'w') as f:
                 f.write(self.renderer.render(template_name, **page_contents))
+
+
+class TagPresenter:
+    def __init__(self, html_renderer):
+        self.renderer = html_renderer
+
+    def _extract_by_tag(self, pages):
+        tagged_pages = defaultdict(list)
+        for page in pages:
+            if len(page.tags) == 0:
+                raise exceptions.IncompletePage(
+                    f'Page {page} missing "tags"')
+            for tag in page.tags:
+                tagged_pages[tag].append({
+                    'title': page.title,
+                    'date': page.date,
+                    'link': 'page link'
+                })
+        return tagged_pages
+
+    def output(self, pages, target_dir):
+        target_dir.mkdir(mode=0o755)
+        tagged_pages = self._extract_by_tag(pages)
+
+        for tag, page_list in tagged_pages.items():
+            index_fpath = target_dir / (tag + '.html')
+            with open(index_fpath, 'w') as f:
+                f.write(self.renderer.render(tag=tag, tagged_items=page_list))

@@ -1,6 +1,6 @@
 import pytest
 
-from wintersun import post_item, post_repo
+from wintersun import exceptions, post_item, post_repo
 
 
 @pytest.fixture
@@ -32,7 +32,7 @@ class TestInMemPostRepo:
     def test_insert_duplicate_post_raises(self, inmem_repo, example_post_dict):
         first_date = example_post_dict['date']
         example_post_dict['date'] = '2017-12-31 06:00:00'
-        with pytest.raises(post_repo.DuplicatePost) as exc:
+        with pytest.raises(exceptions.DuplicatePost) as exc:
             inmem_repo.insert(**example_post_dict)
 
         exc_msg = str(exc)
@@ -48,7 +48,7 @@ class TestInMemPostRepo:
 
     def test_get_inexistent_post_raises_notfound(self, inmem_repo):
         title = 'some random title'
-        with pytest.raises(post_repo.NotFound) as exc:
+        with pytest.raises(exceptions.NotFound) as exc:
             inmem_repo.get(title)
 
             assert title in str(exc.value)
@@ -79,7 +79,7 @@ class TestInMemPostRepo:
         assert asc_titles == [first_title, second_post['title']]
 
     def test_all_invalid_sorting_order_raises(self, inmem_repo):
-        with pytest.raises(post_repo.PostRepoException) as exc:
+        with pytest.raises(exceptions.PostRepoException) as exc:
             inmem_repo.all(order='wat')
 
             assert 'Invalid sorting order' in str(exc)

@@ -3,10 +3,11 @@ from pathlib import Path
 
 import pytest
 
-from wintersun import presenters
+from wintersun import exceptions, presenters
 
 
-Post = namedtuple('Post', 'title, standardized_name, template, date, contents')
+Post = namedtuple('Post',
+                  'title, standardized_name, template, date, contents, tags')
 
 
 @pytest.fixture
@@ -22,7 +23,8 @@ def atom_presenter_kwargs():
 
 @pytest.fixture
 def post():
-    return Post('Post-Title', 'post-title', 'Post', '2018-01-01', 'Lorem ipsum')
+    return Post('Post-Title', 'post-title', 'Post', '2018-01-01',
+                'Lorem ipsum', ['programming'])
 
 
 @pytest.fixture
@@ -159,3 +161,67 @@ class TestHTMLPresenter:
             assert p_file.name == posts[idx].standardized_name + '.html'
             with open(p_file, 'r') as f:
                 assert posts[idx].title in f.read()
+
+
+class TestTagPresenter:
+    def test_generate_one_index_with_posts(self, tmpdir, mock_renderer, post):
+        container_dir = tmpdir.mkdir('test')
+        target_dir = Path(container_dir, 'tags')
+        presenter = presenters.TagPresenter(mock_renderer)
+
+        presenter.output([post], target_dir)
+
+        assert target_dir.exists()
+        index_files = [f for f in target_dir.iterdir() if f.is_file()]
+        expected_index_file = post.tags[0] + '.html'
+        assert index_files[0].parent.name == 'tags'
+        assert index_files[0].name == expected_index_file
+
+        with open(index_files[0], 'r') as f:
+            assert post.title in f.read()
+
+    def test_generate_multiple_indexes(self, tmpdir, mock_renderer, post):
+        container_dir = tmpdir.mkdir('test')
+        target_dir = Path(container_dir, 'tags')
+        presenter = presenters.TagPresenter(mock_renderer)
+        post2 = post._replace(tags=['linux'], title='linux post')
+
+        presenter.output([post, post2], target_dir)
+
+        index_files = sorted([f for f in target_dir.iterdir() if f.is_file()])
+        assert len(index_files) == 2
+        assert index_files[0].name == 'linux.html'
+        assert index_files[1].name == 'programming.html'
+
+        with open(index_files[0], 'r') as f:
+            assert post2.title in f.read()
+
+        with open(index_files[1], 'r') as f:
+            assert post.title in f.read()
+
+    def test_generate_overlapping_indexes(self, tmpdir, mock_renderer, post):
+        container_dir = tmpdir.mkdir('test')
+        target_dir = Path(container_dir, 'tags')
+        presenter = presenters.TagPresenter(mock_renderer)
+        post2 = post._replace(
+            tags=['linux', 'programming'], title='linux programming post')
+
+        presenter.output([post, post2], target_dir)
+        index_files = sorted([f for f in target_dir.iterdir() if f.is_file()])
+        assert len(index_files) == 2
+
+        # index_files[1] == programming.html
+        with open(index_files[1], 'r') as f:
+            contents = f.read()
+            assert post.title in contents
+            assert post2.title in contents
+
+        with open(index_files[0], 'r') as f:
+            assert post2.title in f.read()
+
+    def test_untagged_page_raises_error(self, tmpdir, mock_renderer, post):
+        post2 = post._replace(tags=[])
+        target_dir = Path(tmpdir.strpath, 'test')
+        presenter = presenters.TagPresenter(mock_renderer)
+        with pytest.raises(exceptions.IncompletePage):
+            presenter.output([post2], target_dir)

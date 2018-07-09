@@ -1,19 +1,6 @@
 from datetime import datetime
 
-from wintersun import post_item
-
-
-# inherit from wintersunexc
-class PostRepoException(Exception):
-    pass
-
-
-class NotFound(PostRepoException):
-    pass
-
-
-class DuplicatePost(PostRepoException):
-    pass
+from wintersun import exceptions, post_item
 
 
 class InMemPostRepo:
@@ -24,11 +11,12 @@ class InMemPostRepo:
         for post in self.posts:
             if post.title == title:
                 return post
-        raise NotFound(f'Post "{title}" not found')
+        raise exceptions.NotFound(f'Post "{title}" not found')
 
     def all(self, order='desc'):
         if order not in ('asc', 'desc'):
-            raise PostRepoException(f'Invalid sorting order: "{order}"')
+            raise exceptions.PostRepoException(
+                f'Invalid sorting order: "{order}"')
         reverse = order == 'desc'
         ordered_posts = sorted(
             self.posts,
@@ -45,10 +33,10 @@ class InMemPostRepo:
                tags=None):
         try:
             existing = self.get(title)
-            raise DuplicatePost(
+            raise exceptions.DuplicatePost(
                 f'Post titled "{title}" from "{existing.date}" already exists, '
                 f'cannot insert post dated "{date}"')
-        except NotFound:
+        except exceptions.NotFound:
             self.posts.append(
                 post_item.PostItem(title, contents, standardized_name,
                                    template, date, tags))
