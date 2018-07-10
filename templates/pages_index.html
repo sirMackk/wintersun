@@ -1,0 +1,16 @@
+{% extends "index.html" %}
+
+{% block content %}
+  <div class="intro">
+    <p>
+    </p>
+  </div>
+  <h4>Page Archive</h4>
+  <ul class="link-list">
+    {% for page in pages %}
+      <li>
+          <a href="{{ page.link }}">{{ page.title }}</a>
+      </li>
+    {% endfor %}
+  </ul>
+{% endblock content %}

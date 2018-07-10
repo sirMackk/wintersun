@@ -1,3 +1,4 @@
+import itertools
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -60,22 +61,36 @@ class HTMLIndexPresenter:
         self.site_url = site_url
         self.post_dir = post_dir
 
-    # create post and page index templates
-    # integrate into main.py, create filtering scheme
-    def output(self, pages, template_name, target_dir):
+    # integrate into main.py, create filtering scheme (add attribute to files?)
+    def output(self, pages, template_name, target_dir, grouped=True):
+        # 'grouped' is confusing, because the template should imply it
         # ugly pluralization + suffix; Document naming convention.
         index_tpl_name = template_name + 's_index.html'
         target_fpath = target_dir / (template_name + 's.html')
         index_entries = self._generate_index_entries(pages)
+        if grouped:
+            index_entries = {
+                k: list(group)
+                for k, group in self._group_by_year(index_entries)
+            }
+
         with open(target_fpath, 'w') as f:
             f.write(self.renderer.render(index_tpl_name, entries=index_entries))
 
     def _generate_index_entries(self, pages):
         entries = [{
             'title': page.title,
+            'date': page.date,
             'link': self._generate_entry_link(page)
         } for page in pages]
         return entries
+
+    def _group_by_year(self, entries):
+        def _key(item):
+            # eg. item['date'] == '2018-01-01'
+            return item['date'].split('-')[0]
+
+        return itertools.groupby(entries, _key)
 
     # duplicate code, think about extracting into own object eg. LinkGenerator
     def _generate_entry_link(self, page):

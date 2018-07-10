@@ -225,7 +225,7 @@ class TestHTMLIndexPresenter:
         presenter.output([], 'post', target_dir)
 
         mock_renderer.render.assert_called_once_with(
-            'posts_index.html', entries=[])
+            'posts_index.html', entries={})
         index_file = list(target_dir.iterdir())[0].name
         assert index_file == 'posts.html'
 
@@ -235,18 +235,55 @@ class TestHTMLIndexPresenter:
         target_dir.mkdir(mode=0o755)
         presenter = presenters.HTMLIndexPresenter(
             mock_renderer, 'http://example.com', 'posts')
-        post2 = post._replace(title='Second post', standardized_name='2nd-post')
+        post2 = post._replace(
+            title='Second post',
+            standardized_name='2nd-post',
+            date='2017-01-01')
 
         presenter.output([post, post2], 'post', target_dir)
 
         index_file = list(target_dir.iterdir())[0].name
         assert index_file == 'posts.html'
+
+        expected_entries = {
+            '2018': [{
+                'title': post.title,
+                'date': post.date,
+                'link': 'http://example.com/posts/post-title.html'
+            }],
+            '2017': [{
+                'title': post2.title,
+                'date': post2.date,
+                'link': 'http://example.com/posts/2nd-post.html'
+            }]
+        }
+        mock_renderer.render.assert_called_once_with(
+            'posts_index.html', entries=expected_entries)
+
+    def test_generate_index_for_posts_ungrouped(self, tmpdir, mock_renderer,
+                                                post):
+        container_dir = tmpdir.mkdir('test')
+        target_dir = Path(container_dir, 'project_root')
+        target_dir.mkdir(mode=0o755)
+        presenter = presenters.HTMLIndexPresenter(
+            mock_renderer, 'http://example.com', 'posts')
+        post2 = post._replace(
+            title='Second post',
+            standardized_name='2nd-post',
+            date='2017-01-01')
+
+        presenter.output([post, post2], 'page', target_dir, grouped=False)
+
         expected_entries = [{
             'title': post.title,
+            'date': post.date,
             'link': 'http://example.com/posts/post-title.html'
         }, {
             'title': post2.title,
+            'date': post2.date,
             'link': 'http://example.com/posts/2nd-post.html'
         }]
         mock_renderer.render.assert_called_once_with(
-            'posts_index.html', entries=expected_entries)
+            'pages_index.html', entries=expected_entries)
+        index_file = list(target_dir.iterdir())[0].name
+        assert index_file == 'pages.html'
