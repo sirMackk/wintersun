@@ -106,18 +106,6 @@ class TestAtomPresenter:
 
 
 class TestHTMLPresenter:
-    def test_outputs_index_file(self, tmpdir, post, mock_renderer):
-        container_dir = tmpdir.mkdir('test')
-        target_dir = Path(container_dir, 'posts')
-        presenter = presenters.HTMLPresenter(mock_renderer)
-
-        presenter.output([post], target_dir)
-
-        index_fpath = target_dir.absolute().parent / 'posts.html'
-        assert index_fpath.exists()
-        with open(index_fpath, 'r') as f:
-            assert post.title in f.read()
-
     def test_outputs_post_files(self, tmpdir, post, mock_renderer):
         container_dir = tmpdir.mkdir('test')
         target_dir = Path(container_dir, 'posts')
@@ -224,3 +212,41 @@ class TestTagPresenter:
                                             'posts')
         with pytest.raises(exceptions.IncompletePage):
             presenter.output([post2], target_dir)
+
+
+class TestHTMLIndexPresenter:
+    def test_generate_empty_index_for_no_posts(self, tmpdir, mock_renderer):
+        container_dir = tmpdir.mkdir('test')
+        target_dir = Path(container_dir, 'project_root')
+        target_dir.mkdir(mode=0o755)
+        presenter = presenters.HTMLIndexPresenter(
+            mock_renderer, 'http://example.com', 'posts')
+
+        presenter.output([], 'post', target_dir)
+
+        mock_renderer.render.assert_called_once_with(
+            'posts_index.html', entries=[])
+        index_file = list(target_dir.iterdir())[0].name
+        assert index_file == 'posts.html'
+
+    def test_generate_index_for_posts(self, tmpdir, mock_renderer, post):
+        container_dir = tmpdir.mkdir('test')
+        target_dir = Path(container_dir, 'project_root')
+        target_dir.mkdir(mode=0o755)
+        presenter = presenters.HTMLIndexPresenter(
+            mock_renderer, 'http://example.com', 'posts')
+        post2 = post._replace(title='Second post', standardized_name='2nd-post')
+
+        presenter.output([post, post2], 'post', target_dir)
+
+        index_file = list(target_dir.iterdir())[0].name
+        assert index_file == 'posts.html'
+        expected_entries = [{
+            'title': post.title,
+            'link': 'http://example.com/posts/post-title.html'
+        }, {
+            'title': post2.title,
+            'link': 'http://example.com/posts/2nd-post.html'
+        }]
+        mock_renderer.render.assert_called_once_with(
+            'posts_index.html', entries=expected_entries)

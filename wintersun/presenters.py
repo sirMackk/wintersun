@@ -53,22 +53,43 @@ class AtomPresenter:
         return entry
 
 
+class HTMLIndexPresenter:
+    """Generate index HTML files for pages."""
+    def __init__(self, html_renderer, site_url, post_dir):
+        self.renderer = html_renderer
+        self.site_url = site_url
+        self.post_dir = post_dir
+
+    # create post and page index templates
+    # integrate into main.py, create filtering scheme
+    def output(self, pages, template_name, target_dir):
+        # ugly pluralization + suffix; Document naming convention.
+        index_tpl_name = template_name + 's_index.html'
+        target_fpath = target_dir / (template_name + 's.html')
+        index_entries = self._generate_index_entries(pages)
+        with open(target_fpath, 'w') as f:
+            f.write(self.renderer.render(index_tpl_name, entries=index_entries))
+
+    def _generate_index_entries(self, pages):
+        entries = [{
+            'title': page.title,
+            'link': self._generate_entry_link(page)
+        } for page in pages]
+        return entries
+
+    # duplicate code, think about extracting into own object eg. LinkGenerator
+    def _generate_entry_link(self, page):
+        return '/'.join(
+            [self.site_url, self.post_dir, page.standardized_name + '.html'])
+
+
 class HTMLPresenter:
+    """Convert existing contents into HTML files."""
     def __init__(self, html_renderer):
         self.renderer = html_renderer
 
     def output(self, pages, target_dir):
-        self._write_index(pages, target_dir)
         self._write_pages(pages, target_dir)
-
-    def _write_index(self, pages, target_dir):
-        # different indexes for different page categories?
-        target_dir_name = target_dir.name
-        index_fpath = target_dir.absolute().parent / (target_dir.stem + '.html')
-        with open(index_fpath, 'w') as f:
-            f.write(
-                self.renderer.render(
-                    'index.html', indexed_dir=target_dir_name, pages=pages))
 
     def _write_pages(self, pages, target_dir):
         target_dir.mkdir(mode=0o755)
