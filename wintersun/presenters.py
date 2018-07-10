@@ -63,22 +63,20 @@ class HTMLPresenter:
 
     def _write_index(self, pages, target_dir):
         # different indexes for different page categories?
+        target_dir_name = target_dir.name
         index_fpath = target_dir.absolute().parent / (target_dir.stem + '.html')
         with open(index_fpath, 'w') as f:
-            f.write(self.renderer.render('index.html', pages=pages))
+            f.write(
+                self.renderer.render(
+                    'index.html', indexed_dir=target_dir_name, pages=pages))
 
     def _write_pages(self, pages, target_dir):
         target_dir.mkdir(mode=0o755)
         for page in pages:
             template_name = page.template.lower() + '.html'
             page_fpath = target_dir / (page.standardized_name + '.html')
-            page_contents = {
-                'title': page.title,
-                'date': page.date,
-                'contents': page.contents
-            }
             with open(page_fpath, 'w') as f:
-                f.write(self.renderer.render(template_name, **page_contents))
+                f.write(self.renderer.render(template_name, page=page))
 
 
 class TagPresenter:
@@ -112,4 +110,6 @@ class TagPresenter:
         for tag, page_list in tagged_pages.items():
             index_fpath = target_dir / (tag + '.html')
             with open(index_fpath, 'w') as f:
-                f.write(self.renderer.render(tag=tag, tagged_items=page_list))
+                f.write(
+                    self.renderer.render(
+                        'tag.html', tag=tag, tagged_items=page_list))

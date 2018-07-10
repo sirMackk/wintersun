@@ -3,15 +3,15 @@
 
 {% block content %}
 
-<h2>{{ meta.title }}</h2>
-<h5 class="date">Published:  {{ meta.date.split(" ").0 }}</h5>
+<h2>{{ page.title }}</h2>
+<h5 class="date">Published:  {{ page.date.split(" ").0 }}</h5>
 <h5 class="tags">Tagged: 
-  {% for tag in meta.tags.split() %}
+  {% for tag in page.tags %}
     <a href="/tags/{{ tag }}.html">{{ tag }}</a>
   {% endfor %}
 </h5>
 
-{{ contents|safe }}
+{{ page.contents|safe }}
 
 <footer>
 This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.

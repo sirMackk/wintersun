@@ -2,9 +2,9 @@
 
 {% block content %}
   <ul class="link-list">
-    {% for indexed_item in meta.indexed %}
+    {% for page in pages %}
     <li>
-      <a href="{{ meta.indexed_dir }}/{{ indexed_item }}.html">{{ indexed_item }}</a>
+      <a href="{{ indexed_dir }}/{{ page.standardized_name }}.html">{{ page.title }}</a>
     </li>
     {% endfor %}
   </ul>

@@ -31,6 +31,7 @@ class InMemPostRepo:
                template,
                date,
                tags=None):
+        tags = tags if tags else []
         try:
             existing = self.get(title)
             raise exceptions.DuplicatePost(
