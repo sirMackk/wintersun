@@ -162,7 +162,8 @@ class TestTagPresenter:
     def test_generate_one_index_with_posts(self, tmpdir, mock_renderer, post):
         container_dir = tmpdir.mkdir('test')
         target_dir = Path(container_dir, 'tags')
-        presenter = presenters.TagPresenter(mock_renderer)
+        presenter = presenters.TagPresenter(mock_renderer, 'example.com',
+                                            'posts')
 
         presenter.output([post], target_dir)
 
@@ -178,7 +179,8 @@ class TestTagPresenter:
     def test_generate_multiple_indexes(self, tmpdir, mock_renderer, post):
         container_dir = tmpdir.mkdir('test')
         target_dir = Path(container_dir, 'tags')
-        presenter = presenters.TagPresenter(mock_renderer)
+        presenter = presenters.TagPresenter(mock_renderer, 'example.com',
+                                            'posts')
         post2 = post._replace(tags=['linux'], title='linux post')
 
         presenter.output([post, post2], target_dir)
@@ -197,7 +199,8 @@ class TestTagPresenter:
     def test_generate_overlapping_indexes(self, tmpdir, mock_renderer, post):
         container_dir = tmpdir.mkdir('test')
         target_dir = Path(container_dir, 'tags')
-        presenter = presenters.TagPresenter(mock_renderer)
+        presenter = presenters.TagPresenter(mock_renderer, 'example.com',
+                                            'posts')
         post2 = post._replace(
             tags=['linux', 'programming'], title='linux programming post')
 
@@ -217,6 +220,7 @@ class TestTagPresenter:
     def test_untagged_page_raises_error(self, tmpdir, mock_renderer, post):
         post2 = post._replace(tags=[])
         target_dir = Path(tmpdir.strpath, 'test')
-        presenter = presenters.TagPresenter(mock_renderer)
+        presenter = presenters.TagPresenter(mock_renderer, 'example.com',
+                                            'posts')
         with pytest.raises(exceptions.IncompletePage):
             presenter.output([post2], target_dir)

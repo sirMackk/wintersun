@@ -82,8 +82,10 @@ class HTMLPresenter:
 
 
 class TagPresenter:
-    def __init__(self, html_renderer):
+    def __init__(self, html_renderer, site_url, post_dir):
         self.renderer = html_renderer
+        self.site_url = site_url
+        self.post_dir = post_dir
 
     def _extract_by_tag(self, pages):
         tagged_pages = defaultdict(list)
@@ -95,9 +97,13 @@ class TagPresenter:
                 tagged_pages[tag].append({
                     'title': page.title,
                     'date': page.date,
-                    'link': 'page link'
+                    'link': self._generate_entry_link(page)
                 })
         return tagged_pages
+
+    def _generate_entry_link(self, post):
+        return '/'.join(
+            [self.site_url, self.post_dir, post.standardized_name + '.html'])
 
     def output(self, pages, target_dir):
         target_dir.mkdir(mode=0o755)
