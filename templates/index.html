@@ -2,9 +2,9 @@
 
 {% block content %}
   <ul class="link-list">
-    {% for page in pages %}
+    {% for post in posts %}
     <li>
-      <a href="{{ indexed_dir }}/{{ page.standardized_name }}.html">{{ page.title }}</a>
+      <a href="{{ indexed_dir }}/{{ post.standardized_name }}.html">{{ post.title }}</a>
     </li>
     {% endfor %}
   </ul>

@@ -7,9 +7,9 @@
   </div>
   <h4>Page Archive</h4>
   <ul class="link-list">
-    {% for page in entries %}
+    {% for essay in entries %}
       <li>
-          <a href="{{ page.link }}">{{ page.title }}</a>
+          <a href="{{ essay.link }}">{{ essay.title }}</a>
       </li>
     {% endfor %}
   </ul>

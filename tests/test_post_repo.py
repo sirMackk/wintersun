@@ -9,7 +9,7 @@ def example_post_dict():
         'title': 'Test Post',
         'template': 'Post',
         'standardized_name': 'test-post',
-        'contents': 'A bunch of contents\nMany pages',
+        'contents': 'A bunch of contents\nMany Posts',
         'date': '2014-12-31 01:16:13',
         'tags': ['python', 'software']
     }

@@ -83,7 +83,7 @@ class TestAtomPresenter:
         target_dir = tmpdir.mkdir('target')
         target_file = 'test_feed'
         target_fpath = Path(target_dir, target_file)
-        post = post._replace(template='Page')
+        post = post._replace(template='Essay')
 
         presenter = presenters.AtomPresenter(**atom_presenter_kwargs)
         with mocker.patch.object(
@@ -205,12 +205,12 @@ class TestTagPresenter:
         with open(index_files[0], 'r') as f:
             assert post2.title in f.read()
 
-    def test_untagged_page_raises_error(self, tmpdir, mock_renderer, post):
+    def test_untagged_post_raises_error(self, tmpdir, mock_renderer, post):
         post2 = post._replace(tags=[])
         target_dir = Path(tmpdir.strpath, 'test')
         presenter = presenters.TagPresenter(mock_renderer, 'example.com',
                                             'posts')
-        with pytest.raises(exceptions.IncompletePage):
+        with pytest.raises(exceptions.IncompletePost):
             presenter.output([post2], target_dir)
 
 
@@ -272,7 +272,7 @@ class TestHTMLIndexPresenter:
             standardized_name='2nd-post',
             date='2017-01-01')
 
-        presenter.output([post, post2], 'page', target_dir, grouped=False)
+        presenter.output([post, post2], 'post', target_dir, grouped=False)
 
         expected_entries = [{
             'title': post.title,
@@ -284,6 +284,6 @@ class TestHTMLIndexPresenter:
             'link': 'http://example.com/posts/2nd-post.html'
         }]
         mock_renderer.render.assert_called_once_with(
-            'pages_index.html', entries=expected_entries)
+            'posts_index.html', entries=expected_entries)
         index_file = list(target_dir.iterdir())[0].name
-        assert index_file == 'pages.html'
+        assert index_file == 'posts.html'

@@ -2,8 +2,8 @@ class WintersunException(Exception):
     """General Wintersun exception"""
 
 
-class IncompletePage(WintersunException):
-    """Page is missing data"""
+class IncompletePost(WintersunException):
+    """Post is missing data"""
 
 
 class PostRepoException(WintersunException):

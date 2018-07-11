@@ -10,8 +10,8 @@ def template_dir(tmpdir):
     post_template = template_dir.join('post.html')
 
     index_template.write('<h1>Index</h1>'
-                         '{% for page in pages %}'
-                         '{{ page.title }}'
+                         '{% for post in posts %}'
+                         '{{ post.title }}'
                          '{% endfor %}')
 
     post_template.write('<h1>{{ title }}</h1>'
@@ -27,9 +27,9 @@ def renderer(template_dir):
 
 class TestTemplateRenderer:
     @pytest.mark.integration
-    def test_render_sample_page(self, renderer):
+    def test_render_sample_post(self, renderer):
         parts = {
-            'title': 'Page title',
+            'title': 'Post title',
             'date': '2018-01-06 10:52:32',
             'contents': 'Lorem ipsum'
         }

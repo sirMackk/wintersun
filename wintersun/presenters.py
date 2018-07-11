@@ -55,19 +55,18 @@ class AtomPresenter:
 
 
 class HTMLIndexPresenter:
-    """Generate index HTML files for pages."""
+    """Generate index HTML files for posts."""
     def __init__(self, html_renderer, site_url, post_dir):
         self.renderer = html_renderer
         self.site_url = site_url
         self.post_dir = post_dir
 
-    # integrate into main.py, create filtering scheme (add attribute to files?)
-    def output(self, pages, template_name, target_dir, grouped=True):
+    def output(self, posts, template_name, target_dir, grouped=True):
         # 'grouped' is confusing, because the template should imply it
         # ugly pluralization + suffix; Document naming convention.
         index_tpl_name = template_name + 's_index.html'
         target_fpath = target_dir / (template_name + 's.html')
-        index_entries = self._generate_index_entries(pages)
+        index_entries = self._generate_index_entries(posts)
         if grouped:
             index_entries = {
                 k: list(group)
@@ -77,12 +76,12 @@ class HTMLIndexPresenter:
         with open(target_fpath, 'w') as f:
             f.write(self.renderer.render(index_tpl_name, entries=index_entries))
 
-    def _generate_index_entries(self, pages):
+    def _generate_index_entries(self, posts):
         entries = [{
-            'title': page.title,
-            'date': page.date,
-            'link': self._generate_entry_link(page)
-        } for page in pages]
+            'title': post.title,
+            'date': post.date,
+            'link': self._generate_entry_link(post)
+        } for post in posts]
         return entries
 
     def _group_by_year(self, entries):
@@ -93,9 +92,9 @@ class HTMLIndexPresenter:
         return itertools.groupby(entries, _key)
 
     # duplicate code, think about extracting into own object eg. LinkGenerator
-    def _generate_entry_link(self, page):
+    def _generate_entry_link(self, post):
         return '/'.join(
-            [self.site_url, self.post_dir, page.standardized_name + '.html'])
+            [self.site_url, self.post_dir, post.standardized_name + '.html'])
 
 
 class HTMLPresenter:
@@ -103,16 +102,16 @@ class HTMLPresenter:
     def __init__(self, html_renderer):
         self.renderer = html_renderer
 
-    def output(self, pages, target_dir):
-        self._write_pages(pages, target_dir)
+    def output(self, posts, target_dir):
+        self._write_posts(posts, target_dir)
 
-    def _write_pages(self, pages, target_dir):
+    def _write_posts(self, posts, target_dir):
         target_dir.mkdir(mode=0o755)
-        for page in pages:
-            template_name = page.template.lower() + '.html'
-            page_fpath = target_dir / (page.standardized_name + '.html')
-            with open(page_fpath, 'w') as f:
-                f.write(self.renderer.render(template_name, page=page))
+        for post in posts:
+            template_name = post.template.lower() + '.html'
+            post_fpath = target_dir / (post.standardized_name + '.html')
+            with open(post_fpath, 'w') as f:
+                f.write(self.renderer.render(template_name, post=post))
 
 
 class TagPresenter:
@@ -121,31 +120,31 @@ class TagPresenter:
         self.site_url = site_url
         self.post_dir = post_dir
 
-    def _extract_by_tag(self, pages):
-        tagged_pages = defaultdict(list)
-        for page in pages:
-            if len(page.tags) == 0:
-                raise exceptions.IncompletePage(
-                    f'Page {page} missing "tags"')
-            for tag in page.tags:
-                tagged_pages[tag].append({
-                    'title': page.title,
-                    'date': page.date,
-                    'link': self._generate_entry_link(page)
+    def _extract_by_tag(self, posts):
+        tagged_posts = defaultdict(list)
+        for post in posts:
+            if len(post.tags) == 0:
+                raise exceptions.IncompletePost(
+                    f'post {post} missing "tags"')
+            for tag in post.tags:
+                tagged_posts[tag].append({
+                    'title': post.title,
+                    'date': post.date,
+                    'link': self._generate_entry_link(post)
                 })
-        return tagged_pages
+        return tagged_posts
 
     def _generate_entry_link(self, post):
         return '/'.join(
             [self.site_url, self.post_dir, post.standardized_name + '.html'])
 
-    def output(self, pages, target_dir):
+    def output(self, posts, target_dir):
         target_dir.mkdir(mode=0o755)
-        tagged_pages = self._extract_by_tag(pages)
+        tagged_posts = self._extract_by_tag(posts)
 
-        for tag, page_list in tagged_pages.items():
+        for tag, post_list in tagged_posts.items():
             index_fpath = target_dir / (tag + '.html')
             with open(index_fpath, 'w') as f:
                 f.write(
                     self.renderer.render(
-                        'tag.html', tag=tag, tagged_items=page_list))
+                        'tag.html', tag=tag, tagged_items=post_list))

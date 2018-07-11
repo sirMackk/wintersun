@@ -93,6 +93,7 @@ section.main {
   max-width: 775px;
   display: inline-block;
   float: left;
+  width: 100%;
 }
 
 aside {
