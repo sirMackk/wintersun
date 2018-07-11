@@ -59,3 +59,9 @@ def main():
     pages = presenters.HTMLPresenter(renderer)
 
     pages.output(repo.all(), target_dir / config['post_dir'])
+
+    indexes = presenters.HTMLIndexPresenter(renderer, config['site_url'],
+                                            config['post_dir'])
+    indexes.output(repo.all_by_template('Post'), 'post', target_dir)
+    indexes.output(
+        repo.all_by_template('Page'), 'page', target_dir, grouped=False)

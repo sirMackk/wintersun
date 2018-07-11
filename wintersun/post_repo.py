@@ -24,6 +24,11 @@ class InMemPostRepo:
             reverse=reverse)
         return ordered_posts
 
+    def all_by_template(self, template_name, order='desc'):
+        posts = self.all(order)
+        filtered = [p for p in posts if p.template == template_name]
+        return filtered
+
     def insert(self,
                title,
                contents,

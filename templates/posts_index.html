@@ -7,7 +7,7 @@
   </div>
   <h4>Post Archive</h4>
   <ul class="link-list">
-    {% for year, posts in entries %}
+    {% for year, posts in entries.items() %}
     <h4 class="year-header">{{ year }}</h4>
         {% for post in posts %}
         <li>

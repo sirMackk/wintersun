@@ -83,3 +83,19 @@ class TestInMemPostRepo:
             inmem_repo.all(order='wat')
 
             assert 'Invalid sorting order' in str(exc)
+
+    def test_get_items_by_template(self, inmem_repo, example_post_dict):
+        first_post = example_post_dict
+        second_post = first_post.copy()
+        second_post['title'] = 'Second Essay'
+        second_post['template'] = 'Essay'
+        inmem_repo.insert(**second_post)
+
+        posts = inmem_repo.all_by_template('Post')
+        essays = inmem_repo.all_by_template('Essay')
+
+        assert len(posts) == 1
+        assert len(essays) == 1
+
+        assert posts[0].title == example_post_dict['title']
+        assert essays[0].title == second_post['title']
