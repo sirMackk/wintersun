@@ -26,7 +26,7 @@ class AtomPresenter:
                                    self._rfc3339_ts_now())
         with open(target_path, 'w', encoding=self.encoding) as f:
             for post in posts:
-                if post.template == 'Post':
+                if post.template in ('Post', 'Essay'):
                     feed.add_entry(
                         self._generate_atom_entry_dict(post))
             f.write(feed.generate_xml())
