@@ -106,7 +106,7 @@ class HTMLPresenter:
         self._write_posts(posts, target_dir)
 
     def _write_posts(self, posts, target_dir):
-        target_dir.mkdir(mode=0o755)
+        target_dir.mkdir(mode=0o755, exist_ok=True)
         for post in posts:
             template_name = post.template.lower() + '.html'
             post_fpath = target_dir / (post.standardized_name + '.html')

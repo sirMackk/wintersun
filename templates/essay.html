@@ -1,6 +1,6 @@
-{% extends "base.html" %}
+{% extends "base_post.html" %}
 
-{% block content %}
+{% block post_content %}
 <h2>{{ post.title }}</h2>
 <h5 class="tags">Tagged:
   {% for tag in post.tags %}
@@ -10,7 +10,11 @@
 
 {{ post.contents|safe }}
 
-<footer>
-This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.
-</footer>
-{% endblock content %}
+
+{% endblock post_content %}
+
+{% block post_footer %}
+<div>
+    <a href="/essays.html">Back to Essays & Guides</a>
+</div>
+{% endblock post_footer %}

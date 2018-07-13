@@ -43,7 +43,7 @@ def main():
                         config['delete_target_dir'])
 
     repo = post_repo.InMemPostRepo()
-    for post in post_reader.MdFileReader.read('.'):
+    for post in post_reader.MdFileReader.read(config['post_dir']):
         repo.insert(**post)
 
     atom_feed = presenters.AtomPresenter(
@@ -65,3 +65,10 @@ def main():
     indexes.output(repo.all_by_template('Post'), 'post', target_dir)
     indexes.output(
         repo.all_by_template('Essay'), 'essay', target_dir, grouped=False)
+
+    flat_repo = post_repo.InMemPostRepo()
+    for flat_post in post_reader.MdFileReader.read(config['flat_dir']):
+        flat_repo.insert(**flat_post)
+
+    flat_posts = presenters.HTMLPresenter(renderer)
+    flat_posts.output(flat_repo.all(), target_dir)

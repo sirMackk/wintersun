@@ -1,7 +1,7 @@
-{% extends "base.html" %}
+{% extends "base_post.html" %}
 
 
-{% block content %}
+{% block post_content %}
 
 <h2>{{ post.title }}</h2>
 <h5 class="date">Published:  {{ post.date.split(" ").0 }}</h5>
@@ -13,7 +13,10 @@
 
 {{ post.contents|safe }}
 
-<footer>
-This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.
-</footer>
-{% endblock content %}
+{% endblock post_content %}
+
+{% block post_footer %}
+<div>
+    <a href="/posts.html">Back to Blog</a>
+</div>
+{% endblock post_footer %}

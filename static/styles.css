@@ -96,6 +96,14 @@ section.main {
   width: 100%;
 }
 
+section.main .post-bottom {
+  margin-bottom: 20px;
+}
+
+section.main .post-bottom div {
+  margin: 10px 0 10px;
+}
+
 aside {
   max-width: 330px;
   display: inline-block;
